@@ -2,12 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 import getNextService from './services/apiService';
 import { useEffect, useState } from 'react';
-import {
-  SafeAreaView,
-  SafeAreaProvider,
-  SafeAreaInsetsContext,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import LineName from './components/LineName';
 
 export default function App() {
   const [loading, setLoading] = useState(false);
@@ -29,7 +25,7 @@ export default function App() {
   return (
     <SafeAreaView style={{flex: 1}}>
       <View style={styles.container}>
-        <Text>Hello world!</Text>
+        <LineName lineName={"Kitchener"} stationName={"Mount Pleasant GO"}/>
         {loading ? "" : 
           tripTimes.map((trip, index) => (
             <View key={trip.ScheduledDepartureTime}>
@@ -49,5 +45,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    padding: '5%',
   },
 });
