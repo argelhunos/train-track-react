@@ -1,55 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import getNextService from './services/apiService';
-import { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import LineName from './components/LineName';
-import DepartureCard from './components/Departure';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import DepartureBoard from './screens/DepartureBoard';
+import Settings from './screens/Settings';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function App() {
-  const [loading, setLoading] = useState(false);
-  const [tripTimes, setTripTimes] = useState([]);
-
-  useEffect(() => {
-    setLoading(true);
-    getNextService()
-      .then(data => {
-        setTripTimes(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.log(error);
-        setLoading(false);
-      })
-  }, [])
+  const Tab = createBottomTabNavigator();
 
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <View style={styles.container}>
-        <LineName lineName={"Kitchener"} stationName={"Mount Pleasant GO"}/>
-        <ScrollView>
-          {loading ? "" : 
-            tripTimes.map((trip, index) => (
-              <DepartureCard
-                platform={trip.ScheduledPlatform}
-                time={trip.ScheduledDepartureTime}
-                destination={trip.DirectionName}
-                key={trip.ScheduledDepartureTime}
-              />
-            ))
-          }
-        </ScrollView>
-        <StatusBar style="auto" />
-      </View>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <NavigationContainer>
+          <Tab.Navigator
+            screenOptions={{ headerShown: false}}
+          >
+            <Tab.Screen name="Departure Board" component={DepartureBoard} />
+            <Tab.Screen name="Settings" component={Settings} />
+          </Tab.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: '5%',
-    gap: 10,
-  },
-});
