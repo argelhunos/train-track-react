@@ -66,3 +66,5 @@ export const getAllItems = async () => {
     return {};
   }
 };
+
+export default { setItem, getItem, removeItem, mergeItem, clear, getAllKeys, getAllItems }
