@@ -23,7 +23,7 @@ function Settings() {
         
         getItem('stop')
             .then(data => {
-                setSelectedStop(data['name']);
+                setSelectedStop(data);
             })
             .catch(error => console.log(error));
 
@@ -31,6 +31,16 @@ function Settings() {
     }, [])
 
     const onLineChange = () => {
+        // if line selected was the same as previous, exit early.
+        try {
+            let oldLine = getItem('line');
+            if (oldLine === selectedLine) {
+                return
+            }
+        } catch (error) {
+            console.error(error);
+        }
+
         // select list already handles state change, just need to save it to async storage
         setItem('line', selectedLine)
             .then(() => {
@@ -38,6 +48,7 @@ function Settings() {
                 getStops()
                     .then(data => setStops(data))
             })
+        // erase selected stop with line change, 
         setSelectedStop("");
         console.log('hi');
     }

@@ -114,4 +114,16 @@ export const getStops = async () => {
     }
 };
 
-export default { trainLineSelections, getStops };
+export const getStopCode = async () => {
+    try {
+        const line = await getItem('line');
+        const stop = await getItem('stop');
+        const code = stopMap.get(line).filter((station) => station.name === stop);
+        return code[0]['code']; // find stop code by searching stops by line, filter by station name, first result is code.
+    } catch (error) {
+        console.log(error);
+        return "";
+    }
+}
+
+export default { trainLineSelections, getStops, getStopCode };

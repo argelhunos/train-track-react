@@ -5,22 +5,36 @@ import LineName from '../components/LineName';
 import DepartureCard from '../components/Departure';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { getItem } from '../utils/AsyncStorage';
 
 function DepartureBoard() {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
+    const [line, setLine] = useState("");
+    const [stop, setStop] = useState("");
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
         setLoading(true);
+
+        getItem('line')
+          .then(data => {
+            setLine(data);
+          });
+        
+        getItem('stop')
+          .then(data => {
+            setStop(data);
+          });
+
         getNextService()
-        .then(data => {
-            setTripTimes(data);
-            setLoading(false);
-        })
-        .catch((error) => {
-            console.log(error);
-            setLoading(false);
+          .then(data => {
+              setTripTimes(data);
+              setLoading(false);
+          })
+          .catch((error) => {
+              console.log(error);
+              setLoading(false);
         })
     }, [])
 
@@ -35,7 +49,7 @@ function DepartureBoard() {
         gap: 10,
       }}>
         <View style={styles.container}>
-          <LineName lineName={"Kitchener"} stationName={"Mount Pleasant GO"}/>
+          <LineName lineName={line} stationName={stop}/>
           <ScrollView>
             {loading ? "" : 
               tripTimes.map((trip, index) => (
