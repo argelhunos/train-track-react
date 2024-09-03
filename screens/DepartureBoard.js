@@ -1,20 +1,32 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, ActivityIndicator, View } from 'react-native';
 import getNextService from '../services/apiService';
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import LineName from '../components/LineName';
 import DepartureCard from '../components/Departure';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { getItem } from '../utils/AsyncStorage';
+import { lineAbbreviation, lineColour } from '../data/titleAttributes';
+import { useFocusEffect } from '@react-navigation/native';
 
-function DepartureBoard() {
+function DepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
     const [line, setLine] = useState("");
     const [stop, setStop] = useState("");
     const insets = useSafeAreaInsets();
 
-    useEffect(() => {
+    // useFocusEffect instead of useEffect to update during each focus, so it is always using updated user line/stop preferences
+    useFocusEffect(
+      useCallback(() => {
+        // if there is no line set, force user to go to settings
+        getItem('line')
+          .then(data => {
+            if (!data) {
+              navigation.navigate('Settings');
+            }
+          });
+
         setLoading(true);
 
         getItem('line')
@@ -36,7 +48,8 @@ function DepartureBoard() {
               console.log(error);
               setLoading(false);
         })
-    }, [])
+      }, [])
+    );
 
     return (
       <View style={{
@@ -49,9 +62,14 @@ function DepartureBoard() {
         gap: 10,
       }}>
         <View style={styles.container}>
-          <LineName lineName={line} stationName={stop}/>
+          <LineName 
+            lineName={line} 
+            stationName={stop} 
+            lineAbbreviation={lineAbbreviation.get(line)}
+            lineColour={lineColour.get(line)}
+          />
           <ScrollView>
-            {loading ? "" : 
+            {loading ? <ActivityIndicator size="large" /> : 
               tripTimes.map((trip, index) => (
                 <DepartureCard
                   platform={trip.ScheduledPlatform}

@@ -1,5 +1,4 @@
 import { getStopCode } from "../data/dropdownOptions";
-import { getItem } from "../utils/AsyncStorage";
 
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI"
 const KEY = process.env.EXPO_PUBLIC_API_KEY
