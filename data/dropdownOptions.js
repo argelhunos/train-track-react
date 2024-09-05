@@ -114,6 +114,7 @@ export const getStops = async () => {
     }
 };
 
+// get the correct stop from dropdownOptions based on user selected line and stop
 export const getStopCode = async () => {
     try {
         const line = await getItem('line');
@@ -125,5 +126,3 @@ export const getStopCode = async () => {
         return "";
     }
 }
-
-export default { trainLineSelections, getStops, getStopCode };

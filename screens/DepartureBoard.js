@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, ActivityIndicator, View } from 'react-native';
-import getNextService from '../services/apiService';
+import { getNextService, getSchedule } from '../services/apiService.js'
 import { useCallback, useState } from 'react';
 import LineName from '../components/LineName';
 import DepartureCard from '../components/Departure';
@@ -76,6 +76,7 @@ function DepartureBoard({ navigation }) {
                   time={trip.ScheduledDepartureTime}
                   destination={trip.DirectionName}
                   key={trip.ScheduledDepartureTime}
+                  tripNumber={trip.TripNumber}
                 />
               ))
             }
