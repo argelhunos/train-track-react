@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
 import { trainLineSelections, getStops } from '../data/dropdownOptions';
-import { getItem, setItem } from '../utils/AsyncStorage';
+import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
 
 function Settings() {
     const insets = useSafeAreaInsets();
@@ -50,7 +50,7 @@ function Settings() {
             })
         // erase selected stop with line change, 
         setSelectedStop("");
-        console.log('hi');
+        removeItem('stop');
     }
 
     const onStopChange = () => {

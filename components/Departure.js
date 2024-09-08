@@ -1,6 +1,14 @@
-import { StyleSheet, Text, View, TouchableNativeFeedback, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimation, UIManager } from 'react-native';
 import { useState } from 'react';
 import { getSchedule } from '../services/apiService';
+import Stop from './Stop';
+
+if (
+    Platform.OS === 'android' &&
+    UIManager.setLayoutAnimationEnabledExperimental
+) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 function DepartureCard ({platform, time, destination, tripNumber}) {
     const [expanded, setExpanded] = useState(false);
@@ -13,6 +21,7 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
             .then(data => {
                 setTripStops(data);
                 setLoadingMoreInfo(false);
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setExpanded(!expanded);
             })
             .catch((error) => {
@@ -29,7 +38,10 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                     ? TouchableNativeFeedback.SelectableBackground()
                     : undefined
             }
-            onPress={handleTouch}
+            onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                handleTouch();
+            }}
         >
             <View style={styles.parentContainer}>
                 <View style={styles.container}>
@@ -42,9 +54,15 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                     </View>
                 </View>
                 {expanded && !loadingMoreInfo ?
-                    tripStops.map(stop => 
-                        <Text>{stop.Station}</Text>
-                    )
+                    <View>
+                        {tripStops.map(stop => 
+                            <Stop
+                                station={stop.Station}
+                                departureTime={stop.DepartureTime.Scheduled}
+                                platform={stop.Track.Scheduled}
+                            />
+                        )}
+                    </View>
                     : <></>
                 }
             </View>
@@ -54,6 +72,9 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
 
 const styles = StyleSheet.create({
     parentContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
         backgroundColor: '#dee4d8',
         minWidth: '80%',
         marginBottom: '5%',
@@ -63,7 +84,6 @@ const styles = StyleSheet.create({
     container: {
         display: 'flex',
         flexDirection: 'row',
-        backgroundColor: '#dee4d8',
         minWidth: '80%',
     },
     timePlatform: {
