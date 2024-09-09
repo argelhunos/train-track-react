@@ -50,7 +50,7 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                         <Text>{`Platform ${platform}`}</Text>
                     </View>
                     <View>
-                        <Text>{`to ${destination}`}</Text>
+                        <Text style={styles.destination}>{`to ${destination}`}</Text>
                     </View>
                 </View>
                 {expanded && !loadingMoreInfo ?
@@ -60,6 +60,7 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                                 station={stop.Station}
                                 departureTime={stop.DepartureTime.Scheduled}
                                 platform={stop.Track.Scheduled}
+                                key={stop.Station}
                             />
                         )}
                     </View>
@@ -96,7 +97,12 @@ const styles = StyleSheet.create({
     },  
     destination: {
         display: 'flex',
-        flex: 1,
+        color: 'white',
+        fontWeight: '350',
+        backgroundColor: '#346a21',
+        paddingVertical: '1%',
+        paddingHorizontal: '3%',
+        borderRadius: 20,
     }
 });
 
