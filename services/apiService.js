@@ -58,6 +58,7 @@ function cleanTrackNumber(trackNumber) {
     }
 }   
 
+// retrieve all departures for the user selected GO station and train line
 export async function getNextService() {
     try {
         const stopCode = await getStopCode();
@@ -77,6 +78,7 @@ export async function getNextService() {
     }
 }
 
+// retrieve all stops for a given trip number
 export async function getSchedule(tripNumber) {
     try {
         // get todays date to request stops for the correct day
@@ -133,5 +135,19 @@ export async function getSchedule(tripNumber) {
         });
     } catch (error) {
         throw new Error("An error has occured: " + error);
+    }
+}
+
+// get info about a given trip, including:
+// coach count, if in motion, current location etc.
+// will return null if information is unknown.
+export async function getCurrentTripInfo(tripNumber) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/V1/ServiceataGlance/Trains/All?key=${KEY}`)
+        let data = await response.json();
+
+        return data["Trips"]["Trip"].filter((trip) => trip.TripNumber === tripNumber)[0];
+    } catch (error) {
+        throw new Error("An error has occurred: " + error);
     }
 }

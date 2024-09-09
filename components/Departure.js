@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimation, UIManager } from 'react-native';
-import { useState } from 'react';
-import { getSchedule } from '../services/apiService';
+import { useEffect, useState } from 'react';
+import { getCurrentTripInfo, getSchedule } from '../services/apiService';
 import Stop from './Stop';
 
 if (
@@ -13,7 +13,16 @@ if (
 function DepartureCard ({platform, time, destination, tripNumber}) {
     const [expanded, setExpanded] = useState(false);
     const [tripStops, setTripStops] = useState([]);
+    const [tripInfo, setTripInfo] = useState(null);
     const [loadingMoreInfo, setLoadingMoreInfo] = useState(false);
+
+    useEffect(() => {
+        getCurrentTripInfo(tripNumber)
+            .then(data => {
+                setTripInfo(data)
+            })
+            .catch((error) => console.log(error))
+    }, [])
 
     const handleTouch = () => {
         setLoadingMoreInfo(true);
@@ -47,7 +56,10 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                 <View style={styles.container}>
                     <View style={styles.timePlatform}>
                         <Text style={styles.timeText}>{time}</Text>
-                        <Text>{`Platform ${platform}`}</Text>
+                        <Text>
+                            {`Platform ${platform}`}
+                            {tripInfo != null && ` - ${tripInfo.Cars} Coaches`}
+                        </Text>
                     </View>
                     <View>
                         <Text style={styles.destination}>{`to ${destination}`}</Text>
@@ -65,6 +77,9 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                                 isLastStop={stop.isLastStop}
                             />
                         )}
+                        {tripStops.length === 0 && 
+                            <Text style={styles.error}>Unable to find further info.</Text>
+                        }
                     </View>
                     : <></>
                 }
@@ -110,6 +125,9 @@ const styles = StyleSheet.create({
         display: 'flex',
         flexDirection: 'column',
         gap: 3,
+    },
+    error: {
+        fontStyle: 'italic'
     }
 });
 
