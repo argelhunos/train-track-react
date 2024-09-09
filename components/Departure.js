@@ -54,13 +54,15 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
                     </View>
                 </View>
                 {expanded && !loadingMoreInfo ?
-                    <View>
+                    <View style={styles.stops}>
                         {tripStops.map(stop => 
                             <Stop
                                 station={stop.Station}
                                 departureTime={stop.DepartureTime.Scheduled}
                                 platform={stop.Track.Scheduled}
                                 key={stop.Station}
+                                isFirstStop={stop.isFirstStop}
+                                isLastStop={stop.isLastStop}
                             />
                         )}
                     </View>
@@ -103,6 +105,11 @@ const styles = StyleSheet.create({
         paddingVertical: '1%',
         paddingHorizontal: '3%',
         borderRadius: 20,
+    },
+    stops: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 3,
     }
 });
 

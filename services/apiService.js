@@ -5,6 +5,7 @@ import { getItem } from "../utils/AsyncStorage";
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI"
 const KEY = process.env.EXPO_PUBLIC_API_KEY
 
+// TODO: handle case of departure at midnight 00:00
 function lineTimeCompare(lineA, lineB) {
     if (lineA.ScheduledDepartureTime > lineB.ScheduledDepartureTime) {
         return 1;
@@ -96,7 +97,7 @@ export async function getSchedule(tripNumber) {
         let data = await response.json();
 
         
-        return data["Trips"][0]["Stops"].map(stop => {
+        return data["Trips"][0]["Stops"].map((stop, index, array) => {
             // clean up track number for results from union station (ex. Track 0405 -> Track 4 & 5)
             if (stop.Code === "UN") {
                 return {
@@ -106,6 +107,8 @@ export async function getSchedule(tripNumber) {
                         Scheduled: cleanTrackNumber(stop.Track.Scheduled),
                         Actual: cleanTrackNumber(stop.Track.Actual),
                     },
+                    isFirstStop: !array[index-1] ? true : false,
+                    isLastStop: !array[index+1] ? true : false,
                 }
             }
 
@@ -124,6 +127,8 @@ export async function getSchedule(tripNumber) {
                             : !stop.Track.Actual ? "?"
                             : stop.Track.Actual,
                 },
+                isFirstStop: !array[index-1] ? true : false,
+                isLastStop: !array[index+1] ? true : false,
             }
         });
     } catch (error) {
