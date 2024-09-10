@@ -10,7 +10,7 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-function DepartureCard ({platform, time, destination, tripNumber}) {
+function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
     const [expanded, setExpanded] = useState(false);
     const [tripStops, setTripStops] = useState([]);
     const [tripInfo, setTripInfo] = useState(null);
@@ -55,7 +55,12 @@ function DepartureCard ({platform, time, destination, tripNumber}) {
             <View style={styles.parentContainer}>
                 <View style={styles.container}>
                     <View style={styles.timePlatform}>
-                        <Text style={styles.timeText}>{time}</Text>
+                        <Text 
+                            style={{
+                                ...styles.timeText,
+                                color: isDelayed ? '#A63232' : 'black',
+                            }}
+                        >{time}</Text>
                         <Text>
                             {`Platform ${platform}`}
                             {tripInfo != null && ` - ${tripInfo.Cars} Coaches`}

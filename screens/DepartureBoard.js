@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { ScrollView, StyleSheet, ActivityIndicator, View, Text } from 'react-native';
 import { getNextService, getSchedule } from '../services/apiService.js'
 import { useCallback, useState } from 'react';
 import LineName from '../components/LineName';
@@ -70,15 +70,17 @@ function DepartureBoard({ navigation }) {
           />
           <ScrollView>
             {loading ? <ActivityIndicator size="large" /> : 
+              tripTimes.length != 0 ?
               tripTimes.map((trip, index) => (
                 <DepartureCard
                   platform={trip.ScheduledPlatform}
-                  time={trip.ScheduledDepartureTime}
+                  time={trip.DisplayedDepartureTime}
                   destination={trip.DirectionName}
                   key={trip.ScheduledDepartureTime}
                   tripNumber={trip.TripNumber}
+                  isDelayed={trip.Delayed}
                 />
-              ))
+              )) : <Text>No departures found.</Text>
             }
           </ScrollView>
         </View>

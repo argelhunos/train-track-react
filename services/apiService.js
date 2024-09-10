@@ -17,7 +17,7 @@ function lineTimeCompare(lineA, lineB) {
 }
 
 function padNumber(num) {
-    if (num.toString.length === 1) {
+    if (num.toString().length === 1) {
         return "0" + num;
     } else {
         return num;
@@ -68,11 +68,18 @@ export async function getNextService() {
 
         return data["NextService"]["Lines"]
             .filter((line) => line.LineName === userLine)
-            .map(line => ({
-                ...line, // copy all old assets
-                ScheduledDepartureTime: line.ScheduledDepartureTime.split(' ')[1].substring(0, 5), // remove seconds
-                DirectionName: line.DirectionName.substring(5), // 
-        })).sort(lineTimeCompare); // sort departures by time  
+            .map(line => {
+                const newScheduledDepartureTime = line.ScheduledDepartureTime.split(' ')[1].substring(0, 5);
+                const newComputedDepartureTime = line.ComputedDepartureTime.split(' ')[1].substring(0, 5);
+
+                return {
+                    ...line, // copy all old assets
+                    DisplayedDepartureTime: newComputedDepartureTime > newScheduledDepartureTime ? newComputedDepartureTime : newScheduledDepartureTime,
+                    DirectionName: line.DirectionName.substring(5),
+                    Delayed: newComputedDepartureTime > newScheduledDepartureTime,
+                }
+            }
+        ).sort(lineTimeCompare); // sort departures by time  
     } catch (error) {
         throw new Error("An error has occurred: " + error);
     }
@@ -94,7 +101,7 @@ export async function getSchedule(tripNumber) {
         // fix padding if is single digit month
         month = padNumber(month);
 
-        let currentDate = `${year}${month}${day}`
+        let currentDate = `${year}${month}${day}`;
         const response = await fetch(`${BASE_URL}/api/V1/Schedule/Trip/${currentDate}/${tripNumber}?key=${KEY}`)
         let data = await response.json();
 
@@ -134,7 +141,7 @@ export async function getSchedule(tripNumber) {
             }
         });
     } catch (error) {
-        throw new Error("An error has occured: " + error);
+        throw new Error("An error has occurred: " + error);
     }
 }
 
