@@ -25,6 +25,12 @@ function DepartureBoard({ navigation }) {
             if (!data) {
               navigation.navigate('Settings');
             }
+            return getItem('stop');
+          })
+          .then(data => {
+            if (!data) {
+              navigation.navigate('Settings');
+            }
           });
 
         setLoading(true);

@@ -4,7 +4,7 @@ function Stop({station, departureTime, platform, isFirstStop, isLastStop}) {
     return (
         <View style={styles.container}>
             <View style={styles.platformName}>
-                {!isLastStop && <View style={styles.bar}></View>}
+                {(!isLastStop && !isFirstStop) && <View style={styles.bar}></View>}
                 <View style={styles.circle}></View>
                 <Text
                     style={{
@@ -38,10 +38,9 @@ const styles = StyleSheet.create({
     },
     bar: {
         width: 2,
-        height: 15,
+        height: 40,
         backgroundColor: 'black',
         position: 'absolute',
-        top: 10,
         left: 3,
     } 
 });
