@@ -29,7 +29,7 @@ const widgetConfig: WithAndroidWidgetsParams = {
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'My Expo App Name',
+  name: 'TrainTrack',
   slug: 'TrainTrack',
   plugins: [['react-native-android-widget', widgetConfig]],
 });

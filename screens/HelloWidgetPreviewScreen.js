@@ -7,7 +7,7 @@ export function HelloWidgetPreviewScreen() {
     return (
         <View style={styles.container}>
             <WidgetPreview 
-                renderWidget={() => <HelloWidget />}
+                renderWidget={() => <HelloWidget msg={"Test"}/>}
                 width={320}
                 height={200}
             />
