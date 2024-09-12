@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlexWidget, TextWidget, ImageWidget, ListWidget } from 'react-native-android-widget';
 
-export function HelloWidget({ msg }) {
+export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
     return (
         <FlexWidget
             style={{
@@ -28,7 +28,7 @@ export function HelloWidget({ msg }) {
                     imageHeight={35}
                 />
                 <TextWidget
-                    text={msg}
+                    text={lineAbbr}
                     style={{
                         color: 'white',
                         backgroundColor: '#00863E',
@@ -40,13 +40,13 @@ export function HelloWidget({ msg }) {
                     }}
                 ></TextWidget>
                 <TextWidget 
-                    text="Kitchener"
+                    text={lineName}
                     style={{
                         fontSize: 20,
                         fontWeight: 'bold',
                     }}
                 ></TextWidget>
-                <TextWidget text='@ Bloor GO'></TextWidget>
+                <TextWidget text={`@ ${stopName}`}></TextWidget>
             </FlexWidget>
             <ListWidget
                 style={{
@@ -55,86 +55,43 @@ export function HelloWidget({ msg }) {
                     marginTop: 10,
                 }}
             >
-                <FlexWidget
-                    style={{
-                        backgroundColor: '#EEEAE3',
-                        width: 'match_parent',
-                        padding: 10,
-                        borderRadius: 10,
-                        flexDirection: 'column',
-                    }}
-                >
-                    <TextWidget 
-                        text='17:23 - to Georgetown GO'
+                {departures.map((departure, index) =>
+                    <FlexWidget 
+                        key={index}
                         style={{
-                            fontSize: 15
+                            width: 'match_parent'
                         }}
-                    ></TextWidget>
-                    <TextWidget 
-                        text='Platform 3 | 10 Coaches'
-                        style={{
-                            fontSize: 15
-                        }}
-                    ></TextWidget>
-                </FlexWidget>
-                <FlexWidget
-                    style={{
-                        height: 5,
-                        width: 'match_parent'
-                    }}
-                ></FlexWidget>
-                <FlexWidget
-                    style={{
-                        backgroundColor: '#EEEAE3',
-                        width: 'match_parent',
-                        padding: 10,
-                        borderRadius: 10,
-                        flexDirection: 'column',
-                        marginVertical: 20,
-                    }}
-                >
-                    <TextWidget 
-                        text='17:23 - to Georgetown GO'
-                        style={{
-                            fontSize: 15
-                        }}
-                    ></TextWidget>
-                    <TextWidget 
-                        text='Platform 3 | 10 Coaches'
-                        style={{
-                            fontSize: 15
-                        }}
-                    ></TextWidget>
-                </FlexWidget>
-                <FlexWidget
-                    style={{
-                        height: 5,
-                        width: 'match_parent'
-                    }}
-                ></FlexWidget>
-                <FlexWidget
-                    style={{
-                        backgroundColor: '#EEEAE3',
-                        width: 'match_parent',
-                        padding: 10,
-                        borderRadius: 10,
-                        flexDirection: 'column',
-                        marginVertical: 20,
-                    }}
-                >
-                    <TextWidget 
-                        text='17:23 - to Georgetown GO'
-                        style={{
-                            fontSize: 15
-                        }}
-                    ></TextWidget>
-                    <TextWidget 
-                        text='Platform 3 | 10 Coaches'
-                        style={{
-                            fontSize: 15
-                        }}
-                    ></TextWidget>
-                </FlexWidget>
+                    >
+                        <FlexWidget
+                            style={{
+                                backgroundColor: '#EEEAE3',
+                                width: 'match_parent',
+                                padding: 10,
+                                borderRadius: 10,
+                                flexDirection: 'column',
+                            }}
+                        >
+                            <TextWidget
+                                text={`${departure.DisplayedDepartureTime} - to ${departure.DirectionName}`}
+                                style={{
+                                    fontSize: 15
+                                }}
+                            ></TextWidget>
+                            <TextWidget
+                                text={`Platform ${departure.ScheduledPlatform}`}
+                                style={{
+                                    fontSize: 15
+                                }}
+                            ></TextWidget>
+                        </FlexWidget>
+                        <FlexWidget
+                                style={{
+                                    height: 5,
+                                    width: 'match_parent'
+                                }}
+                            ></FlexWidget>
+                    </FlexWidget> 
+                )}
             </ListWidget>
         </FlexWidget>
     );
