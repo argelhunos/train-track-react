@@ -1,6 +1,8 @@
 import React from 'react';
 import { FlexWidget, TextWidget, ImageWidget, ListWidget } from 'react-native-android-widget';
 
+//TODO: maybe make these into separate react components? idk its a small widget
+
 export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
     return (
         <FlexWidget
@@ -12,47 +14,64 @@ export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
                 borderRadius: 16,
                 paddingHorizontal: 20,
                 paddingTop: 20,
+                flexDirection: 'row',
+                flexGap: 10,
             }}
         >
             <FlexWidget
                 style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexGap: 5,
+                    flexDirection: 'column',
+                    height: 'match_parent',
+                    flexGap: 10,
                 }}
             >
-                <ImageWidget 
-                    image={require('../assets/train.png')}
-                    imageWidth={35}
-                    imageHeight={35}
-                />
-                <TextWidget
-                    text={lineAbbr}
+                <FlexWidget
                     style={{
-                        color: 'white',
-                        backgroundColor: '#00863E',
-                        fontWeight: '800',
-                        paddingHorizontal: 10,
-                        paddingVertical: 2,
-                        fontSize: 15,
-                        borderRadius: 10,
+                        flex: 2,
                     }}
-                ></TextWidget>
-                <TextWidget 
-                    text={lineName}
+                >
+                    <ImageWidget 
+                        image={require('../assets/train.png')}
+                        imageWidth={35}
+                        imageHeight={35}
+                    />
+                    <TextWidget
+                        text={lineAbbr}
+                        style={{
+                            color: 'white',
+                            backgroundColor: '#00863E',
+                            fontWeight: '800',
+                            paddingHorizontal: 10,
+                            paddingVertical: 1,
+                            fontSize: 15,
+                            borderRadius: 15,
+                        }}
+                    ></TextWidget>
+                    <TextWidget 
+                        text={lineName}
+                        style={{
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                        }}
+                    ></TextWidget>
+                    <TextWidget text={`@ ${stopName}`}></TextWidget>
+                </FlexWidget>
+                <FlexWidget
                     style={{
-                        fontSize: 20,
-                        fontWeight: 'bold',
+                        flex: 1
                     }}
-                ></TextWidget>
-                <TextWidget text={`@ ${stopName}`}></TextWidget>
+                >
+                    <ImageWidget 
+                        image={require('../assets/refresh.png')}
+                        imageWidth={25}
+                        imageHeight={25}
+                    />
+                </FlexWidget>
             </FlexWidget>
             <ListWidget
                 style={{
                     width: 'match_parent',
                     height: 'match_parent',
-                    marginTop: 10,
                 }}
             >
                 {departures.map((departure, index) =>
