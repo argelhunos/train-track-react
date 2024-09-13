@@ -6,7 +6,7 @@ const widgetConfig: WithAndroidWidgetsParams = {
   fonts: ['./assets/fonts/Inter.ttf'],
   widgets: [
     {
-      name: 'Hello', // This name will be the **name** with which we will reference our widget.
+      name: 'Departure', // This name will be the **name** with which we will reference our widget.
       label: 'My Hello Widget', // Label shown in the widget picker
       minWidth: '320dp',
       minHeight: '120dp',

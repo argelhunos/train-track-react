@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'My Expo App Name'
+rootProject.name = 'TrainTrack'
 
 dependencyResolutionManagement {
   versionCatalogs {

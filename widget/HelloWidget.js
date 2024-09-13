@@ -3,7 +3,7 @@ import { FlexWidget, TextWidget, ImageWidget, ListWidget } from 'react-native-an
 
 //TODO: maybe make these into separate react components? idk its a small widget
 
-export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
+export function DepartureWidget({ lineAbbr, lineName, stopName, departures, colour }) {
     return (
         <FlexWidget
             style={{
@@ -17,6 +17,7 @@ export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
                 flexDirection: 'row',
                 flexGap: 10,
             }}
+            clickAction='OPEN_APP'
         >
             <FlexWidget
                 style={{
@@ -39,7 +40,7 @@ export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
                         text={lineAbbr}
                         style={{
                             color: 'white',
-                            backgroundColor: '#00863E',
+                            backgroundColor: colour,
                             fontWeight: '800',
                             paddingHorizontal: 10,
                             paddingVertical: 1,
@@ -65,6 +66,8 @@ export function HelloWidget({ lineAbbr, lineName, stopName, departures }) {
                         image={require('../assets/refresh.png')}
                         imageWidth={25}
                         imageHeight={25}
+                        clickAction='REFRESH_CLICK'
+                        clickActionData={{ id: 0 }}
                     />
                 </FlexWidget>
             </FlexWidget>
