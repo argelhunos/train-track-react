@@ -19,28 +19,25 @@ function DepartureBoard({ navigation }) {
 
     const loadDepartures = () => {
       setLoading(true);
-
       getItem('line')
         .then(data => {
           setLine(data);
-        });
-      
-      getItem('stop')
+          return getItem('stop');
+        })
         .then(data => {
           setStop(data);
-        });
-
-      getNextService()
+          return getNextService();
+        })
         .then(data => {
-            setTripTimes(data);
-            setLoading(false);
-            setRefreshing(false);
+          setTripTimes(data);
+          setLoading(false);
+          setRefreshing(false);
         })
         .catch((error) => {
-            console.log(error);
-            setLoading(false);
-            setRefreshing(false);
-      })
+          console.log(error);
+          setLoading(false);
+          setRefreshing(false);
+        })
     }
 
     // useFocusEffect instead of useEffect to update during each focus, so it is always using updated user line/stop preferences
@@ -71,17 +68,14 @@ function DepartureBoard({ navigation }) {
             }
           })
           .finally(() => {
-            console.log("old :" + oldUserLine);
-            console.log("old :" + oldUserStop);
-            console.log("new :" + stop);
-            console.log("new :" + line);
+            // only refresh when line and stop has changed.
             if (oldUserLine === line && oldUserStop === stop) {
               return;
             } else {
               loadDepartures(); 
             }
           })
-      }, [])
+      }, [stop, line])
     );
 
     const onRefresh = () => {
