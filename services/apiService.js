@@ -66,6 +66,7 @@ export async function getNextService() {
         const response = await fetch(`${BASE_URL}/api/V1/Stop/NextService/${stopCode}?key=${KEY}`);
         let data = await response.json();
 
+        // if "Lines" is null, there are no departures found.
         return data["NextService"]["Lines"]
             .filter((line) => line.LineName === userLine)
             .map(line => {
@@ -81,7 +82,8 @@ export async function getNextService() {
             }
         ).sort(lineTimeCompare); // sort departures by time  
     } catch (error) {
-        throw new Error("An error has occurred: " + error);
+        console.error(error);
+        return [];
     }
 }
 

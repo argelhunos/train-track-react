@@ -2,8 +2,8 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 import type { WithAndroidWidgetsParams } from 'react-native-android-widget';
 
 const widgetConfig: WithAndroidWidgetsParams = {
-  // Paths to all custom fonts used in all widgets
-  fonts: ['./assets/fonts/Inter.ttf'],
+  // Paths to all custom fonts used in all widgets (unused atm)
+  fonts: ['./assets/fonts/Manrope-VariableFont_wght.ttf'],
   widgets: [
     {
       name: 'Departure', // This name will be the **name** with which we will reference our widget.

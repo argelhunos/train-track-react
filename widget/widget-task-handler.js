@@ -63,7 +63,17 @@ export async function widgetTaskHandler(props) {
             break;
     
         case 'WIDGET_UPDATE':
-            // Not needed for now
+            // will load the widget with new information every 30 mins
+            requestWidgetUpdate({
+                widgetName: widgetInfo.widgetName,
+                renderWidget: () => <Widget 
+                    lineAbbr={widgetData.lineAbbr}
+                    lineName={widgetData.userLine}
+                    stopName={widgetData.userStop}
+                    departures={widgetData.departures}
+                    colour={widgetData.lineAbbrColour}
+                />
+            });
             break;
     
         case 'WIDGET_RESIZED':

@@ -77,7 +77,7 @@ export function DepartureWidget({ lineAbbr, lineName, stopName, departures, colo
                     height: 'match_parent',
                 }}
             >
-                {departures.map((departure, index) =>
+                {departures.length != 0 ? departures.map((departure, index) =>
                     <FlexWidget 
                         key={index}
                         style={{
@@ -113,7 +113,7 @@ export function DepartureWidget({ lineAbbr, lineName, stopName, departures, colo
                                 }}
                             ></FlexWidget>
                     </FlexWidget> 
-                )}
+                ) : <TextWidget text='No departures found.'/>}
             </ListWidget>
         </FlexWidget>
     );
