@@ -1,5 +1,5 @@
 import { getStopCode } from "../data/dropdownOptions";
-import { fullStationName } from "../data/titleAttributes";
+import { fullStationName, lineAbbreviation } from "../data/titleAttributes";
 import { getItem } from "../utils/AsyncStorage";
 
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI"
@@ -22,6 +22,23 @@ function padNumber(num) {
     } else {
         return num;
     }
+}
+
+function getDate() {
+    // get todays date to request stops for the correct day
+    const date = new Date();
+
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1; // +1 since 0 indexed
+    let day = date.getDate();
+
+    // fix padding if is single digit day
+    day = padNumber(day);
+
+    // fix padding if is single digit month
+    month = padNumber(month);
+
+    return `${year}${month}${day}`;
 }
 
 // clean up responses from trackNumbers like 0405 from union station
@@ -50,7 +67,7 @@ function cleanTrackNumber(trackNumber) {
         return platforms[0] + "/" + platforms[1];
 
         
-    } else if (stop.Track.Scheduled.length === 2) {
+    } else if (trackNumber.length === 2) {
         // remove 0 at start
         return trackNumber.substring(1);
     } else {
@@ -90,20 +107,7 @@ export async function getNextService() {
 // retrieve all stops for a given trip number
 export async function getSchedule(tripNumber) {
     try {
-        // get todays date to request stops for the correct day
-        const date = new Date();
-
-        let year = date.getFullYear();
-        let month = date.getMonth() + 1; // +1 since 0 indexed
-        let day = date.getDate();
-
-        // fix padding if is single digit day
-        day = padNumber(day);
-
-        // fix padding if is single digit month
-        month = padNumber(month);
-
-        let currentDate = `${year}${month}${day}`;
+        const currentDate = getDate();
         const response = await fetch(`${BASE_URL}/api/V1/Schedule/Trip/${currentDate}/${tripNumber}?key=${KEY}`)
         let data = await response.json();
 
@@ -120,6 +124,7 @@ export async function getSchedule(tripNumber) {
                     },
                     isFirstStop: !array[index-1] ? true : false,
                     isLastStop: !array[index+1] ? true : false,
+                    hasVisited: false,
                 }
             }
 
@@ -140,6 +145,7 @@ export async function getSchedule(tripNumber) {
                 },
                 isFirstStop: !array[index-1] ? true : false,
                 isLastStop: !array[index+1] ? true : false,
+                hasVisited: false, // default false, can change when calling getRemainingStops (idk is this is good visit this back)
             }
         });
     } catch (error) {
@@ -147,9 +153,61 @@ export async function getSchedule(tripNumber) {
     }
 }
 
+// retrieve remaining stops for a given trip
+export async function getRemainingStops(tripNumber) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/V1/Gtfs/Feed/TripUpdates?key=${KEY}`);
+        const data = await response.json();
+
+        // build tripID (format: yyyymmdd-lineCode-tripNumber)
+        const currentDate = getDate();
+        const lineName = await getItem('line');
+        let lineCode = lineAbbreviation.get(lineName);
+
+        // compensate for Kitchener internal code still being GT (Kitchener line prev. named Georgetown line)
+        if (lineCode === "KI") {
+            lineCode = "GT";
+        }
+
+        const tripId = `${currentDate}-${lineCode}-${tripNumber}`;
+        
+        console.log(tripId);
+        console.log(data["entity"]);
+        console.log(data["entity"].filter((trip) => trip.id === tripId));
+
+        return data["entity"].filter((trip) => trip.id === tripId)[0]["trip_update"]["stop_time_update"];
+    } catch (error) {
+        console.error("An error has occurred: " + error);
+        return null;
+    }
+}
+
+// combine results from getSchedule and getRemainingStops
+export async function getMergedTripDetails(tripNumber) {
+    try {
+        const schedule = await getSchedule(tripNumber);
+        const remainingStops = await getRemainingStops(tripNumber);
+
+        if (remainingStops === null) {
+            return schedule;
+        } else {
+            return schedule.map((scheduledStop) => (
+                {
+                    ...scheduledStop,
+                    hasVisited: !remainingStops.some((remainingStop) => remainingStop.stop_id === scheduledStop.Code),
+                }
+            ));
+        }
+
+    } catch (error) {
+        console.error("An error has occurred getmerged: " + error);
+    }
+}
+
 // get info about a given trip, including:
 // coach count, if in motion, current location etc.
 // will return null if information is unknown.
+// PRIMARILY USED FOR COACH COUNT
 export async function getCurrentTripInfo(tripNumber) {
     try {
         const response = await fetch(`${BASE_URL}/api/V1/ServiceataGlance/Trains/All?key=${KEY}`)

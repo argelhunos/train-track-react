@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimation, UIManager } from 'react-native';
 import { useEffect, useState } from 'react';
-import { getCurrentTripInfo, getSchedule } from '../services/apiService';
+import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
 import Stop from './Stop';
 
 if (
@@ -26,7 +26,7 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
 
     const handleTouch = () => {
         setLoadingMoreInfo(true);
-        getSchedule(tripNumber)
+        getMergedTripDetails(tripNumber)
             .then(data => {
                 setTripStops(data);
                 setLoadingMoreInfo(false);
@@ -38,6 +38,23 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
                 setLoadingMoreInfo(false);
                 setExpanded(!expanded);
             })
+
+        // getSchedule(tripNumber)
+        //     .then(data => {
+        //         setTripStops(data);
+        //         setLoadingMoreInfo(false);
+        //         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        //         setExpanded(!expanded);
+        //     })
+        //     .catch((error) => {
+        //         console.log(error);
+        //         setLoadingMoreInfo(false);
+        //         setExpanded(!expanded);
+        //     })
+        //     .finally(() => {
+        //         getMergedTripDetails(tripNumber)
+        //             .then((data) => console.log(data))
+        //     })
     }
 
     return (
@@ -80,6 +97,7 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
                                 key={stop.Station}
                                 isFirstStop={stop.isFirstStop}
                                 isLastStop={stop.isLastStop}
+                                hasVisited={stop.hasVisited}
                             />
                         )}
                         {tripStops.length === 0 && 

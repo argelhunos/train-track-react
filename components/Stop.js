@@ -1,11 +1,21 @@
 import { Text, View, StyleSheet } from 'react-native';
 
-function Stop({station, departureTime, platform, isFirstStop, isLastStop}) {
+function Stop({station, departureTime, platform, isFirstStop, isLastStop, hasVisited}) {
     return (
         <View style={styles.container}>
             <View style={styles.platformName}>
-                {(!isLastStop && !isFirstStop) && <View style={styles.bar}></View>}
-                <View style={styles.circle}></View>
+                {(!isLastStop && !isFirstStop) && 
+                    <View style={{
+                        ...styles.bar,
+                        backgroundColor: hasVisited ? "#346A21" : "black",
+                    }}></View>
+                }
+                <View 
+                    style={{
+                        ...styles.circle,
+                        backgroundColor: hasVisited ? "#346A21" : "black"
+                    }}
+                ></View>
                 <Text
                     style={{
                         fontSize: isFirstStop || isLastStop ? 16 : 15,
@@ -37,11 +47,11 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     bar: {
-        width: 2,
+        width: 4,
         height: 40,
         backgroundColor: 'black',
         position: 'absolute',
-        left: 3,
+        left: 2,
     } 
 });
 
