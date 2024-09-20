@@ -5,11 +5,17 @@ import { getItem } from "../utils/AsyncStorage";
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI"
 const KEY = process.env.EXPO_PUBLIC_API_KEY
 
-// TODO: handle case of departure at midnight 00:00
 function lineTimeCompare(lineA, lineB) {
-    if (lineA.ScheduledDepartureTime > lineB.ScheduledDepartureTime) {
+    // must convert everything to minutes since midnight for proper handling of past midnight
+    const [lineAHours, lineAMins] = lineA.DisplayedDepartureTime.split(":");
+    const [lineBHours, lineBMins] = lineB.DisplayedDepartureTime.split(":");
+
+    const lineAMinsSinceMidnight = lineAHours * 60 + lineAMins;
+    const lineBMinsSinceMidnight = lineBHours * 60 + lineBMins;
+
+    if (lineAMinsSinceMidnight > lineBMinsSinceMidnight) {
         return 1;
-    } else if (lineA.ScheduledDepartureTime < lineB.ScheduledDepartureTime) {
+    } else if (lineAMinsSinceMidnight < lineBMinsSinceMidnight) {
         return -1;
     } else {
         return 0;
