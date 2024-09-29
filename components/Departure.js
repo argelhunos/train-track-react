@@ -87,7 +87,7 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
                             }}
                         >{time}</Text>
                         <Text>
-                            {`Platform ${platform}`}
+                            {platform}
                             {tripInfo != null && ` - ${tripInfo.Cars} Coaches`}
                         </Text>
                     </View>

@@ -10,8 +10,17 @@ function lineTimeCompare(lineA, lineB) {
     const [lineAHours, lineAMins] = lineA.DisplayedDepartureTime.split(":");
     const [lineBHours, lineBMins] = lineB.DisplayedDepartureTime.split(":");
 
-    const lineAMinsSinceMidnight = lineAHours * 60 + lineAMins;
-    const lineBMinsSinceMidnight = lineBHours * 60 + lineBMins;
+    let lineAMinsSinceMidnight = lineAHours * 60 + lineAMins;
+    let lineBMinsSinceMidnight = lineBHours * 60 + lineBMins;
+
+    // consider times 00:00-03:00 to be greater
+    if (lineAHours === "00" || lineAHours == "01" || lineAHours == "02" || lineAHours == "03" ) {
+        lineAMinsSinceMidnight += 23 * 60;
+    }
+
+    if (lineBHours === "00" || lineBHours == "01" || lineBHours == "02" || lineBHours == "03" ) {
+        lineAMinsSinceMidnight += 23 * 60;
+    }
 
     if (lineAMinsSinceMidnight > lineBMinsSinceMidnight) {
         return 1;
@@ -101,6 +110,7 @@ export async function getNextService() {
                     DisplayedDepartureTime: newComputedDepartureTime > newScheduledDepartureTime ? newComputedDepartureTime : newScheduledDepartureTime,
                     DirectionName: line.DirectionName.substring(5),
                     Delayed: newComputedDepartureTime > newScheduledDepartureTime,
+                    DisplayedPlatform: line.ActualPlatform === "" ? `Platform ${line.ScheduledPlatform}` : `Platform ${line.ActualPlatform}`,
                 }
             }
         ).sort(lineTimeCompare); // sort departures by time  
@@ -236,7 +246,7 @@ export async function getUnionDepartures() {
                 ...trip,
                 DisplayedDepartureTime: trip.Time.split(" ")[1].substring(0, 5),
                 Stops: trip.Stops.map(info => info.Name),
-                Platform: trip.Info.includes("Wait") ? "Wait / Attendez" : trip.Platform
+                Platform: trip.Info.includes("Wait") ? "Wait / Attendez" : "Platform " + trip.Platform,
             }
         )).sort(lineTimeCompare)
     } catch (error) {

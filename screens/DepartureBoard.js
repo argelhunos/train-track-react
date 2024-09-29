@@ -13,6 +13,7 @@ function DepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [currentTime, setCurrentTime] = useState(new Date().toTimeString());
     const [line, setLine] = useState("");
     const [stop, setStop] = useState("");
     const insets = useSafeAreaInsets();
@@ -32,11 +33,13 @@ function DepartureBoard({ navigation }) {
           setTripTimes(data);
           setLoading(false);
           setRefreshing(false);
+          setCurrentTime(new Date().toTimeString());
         })
         .catch((error) => {
           console.log(error);
           setLoading(false);
           setRefreshing(false);
+          setCurrentTime(new Date().toTimeString());
         })
     }
 
@@ -100,6 +103,7 @@ function DepartureBoard({ navigation }) {
             lineAbbreviation={lineAbbreviation.get(line)}
             lineColour={lineColour.get(line)}
           />
+          <Text>Last Updated: {new Date().toTimeString()}</Text>
           <ScrollView
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>    
@@ -109,7 +113,7 @@ function DepartureBoard({ navigation }) {
               tripTimes.length != 0 ?
               tripTimes.map((trip, index) => (
                 <DepartureCard
-                  platform={trip.ScheduledPlatform}
+                  platform={trip.DisplayedPlatform}
                   time={trip.DisplayedDepartureTime}
                   destination={trip.DirectionName}
                   key={trip.ScheduledDepartureTime}

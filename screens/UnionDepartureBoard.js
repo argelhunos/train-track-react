@@ -12,6 +12,7 @@ import LineName from '../components/LineName';
 function UnionDepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
+    const [currentTime, setCurrentTime] = useState(new Date().toTimeString());
     const insets = useSafeAreaInsets();
 
     const loadDepartures = () => {
@@ -20,15 +21,22 @@ function UnionDepartureBoard({ navigation }) {
         .then(data => {
             setTripTimes(data);
             setLoading(false);
+            setCurrentTime(new Date().toTimeString());
         })
         .catch((error) => {
             console.log(error);
             setLoading(false);
+            setCurrentTime(new Date().toTimeString());
         })
     }
 
     useEffect(() => {
         loadDepartures();
+
+        const interval = setInterval(() => {
+          loadDepartures();
+        }, 60*1000);
+        return () => clearInterval(interval);
     }, [])
 
     return (
@@ -46,6 +54,7 @@ function UnionDepartureBoard({ navigation }) {
             lineName="Union Departures" 
             lineColour="#CECECD"
           />
+          <Text>{`Last Updated: ${currentTime}`}</Text>
           <ScrollView>
             {loading ? <ActivityIndicator size="large" /> : 
               tripTimes.length != 0 ?
