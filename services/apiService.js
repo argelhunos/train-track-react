@@ -224,3 +224,22 @@ export async function getCurrentTripInfo(tripNumber) {
         throw new Error("An error has occurred: " + error);
     }
 }
+
+// retrieve all union departures, replicating departure board found at union
+export async function getUnionDepartures() {
+    try {
+        const response = await fetch(`${BASE_URL}/api/V1/ServiceUpdate/UnionDepartures/All?key=${KEY}`);
+        let data = await response.json();
+
+        return data["AllDepartures"]["Trip"].map((trip) => (
+            {
+                ...trip,
+                DisplayedDepartureTime: trip.Time.split(" ")[1].substring(0, 5),
+                Stops: trip.Stops.map(info => info.Name),
+                Platform: trip.Info.includes("Wait") ? "Wait / Attendez" : trip.Platform
+            }
+        )).sort(lineTimeCompare)
+    } catch (error) {
+        throw new Error("An error has occured: " + error);
+    }
+}

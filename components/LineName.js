@@ -6,7 +6,7 @@ function LineName({lineName, stationName, lineAbbreviation, lineColour}) {
         <View>
             <View style={styles.container}>
                 <MaterialIcons name='train' size={50} color="black"/>
-                <Text style={{
+                {lineAbbreviation && <Text style={{
                     backgroundColor: lineColour,
                     color: 'white',
                     paddingHorizontal: '5%',
@@ -14,10 +14,10 @@ function LineName({lineName, stationName, lineAbbreviation, lineColour}) {
                     borderRadius: 25,
                     fontWeight: '800',
                     fontSize: 20,
-                }}>{lineAbbreviation}</Text>
+                }}>{lineAbbreviation}</Text>}
                 <Text style={styles.lineName}>{lineName}</Text>
             </View>
-            <Text>{`@ ${stationName}`}</Text>
+            {stationName && <Text>{`@ ${stationName}`}</Text>}
         </View>
     )
 }

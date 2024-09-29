@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimat
 import { useEffect, useState } from 'react';
 import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
 import Stop from './Stop';
+import { lineColour, unionLineColour } from '../data/titleAttributes';
 
 if (
     Platform.OS === 'android' &&
@@ -10,7 +11,7 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
+function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isUnionDeparture}) {
     const [expanded, setExpanded] = useState(false);
     const [tripStops, setTripStops] = useState([]);
     const [tripInfo, setTripInfo] = useState(null);
@@ -69,7 +70,14 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
                 handleTouch();
             }}
         >
-            <View style={styles.parentContainer}>
+            <View 
+                style={
+                    {
+                        ...styles.parentContainer,
+                        backgroundColor: isUnionDeparture ? "#EEEAE3" : styles.parentContainer.backgroundColor,
+                    }
+                }
+            >
                 <View style={styles.container}>
                     <View style={styles.timePlatform}>
                         <Text 
@@ -84,7 +92,14 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber}) {
                         </Text>
                     </View>
                     <View>
-                        <Text style={styles.destination}>{`to ${destination}`}</Text>
+                        <Text 
+                            style={{
+                                ...styles.destination,
+                                backgroundColor: isUnionDeparture ? unionLineColour.get(destination) : styles.destination.backgroundColor
+                            }}
+                        >
+                            {`${isUnionDeparture ? destination : `to ${destination}`}`}
+                        </Text>
                     </View>
                 </View>
                 {expanded && !loadingMoreInfo ?

@@ -5,6 +5,7 @@ import Settings from './screens/Settings';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { HelloWidgetPreviewScreen } from './screens/HelloWidgetPreviewScreen';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import UnionDepartureBoard from './screens/UnionDepartureBoard';
 
 export default function App() {
   const Tab = createBottomTabNavigator();
@@ -35,7 +36,7 @@ export default function App() {
           >
             <Tab.Screen name="Departure Board" component={DepartureBoard} />
             <Tab.Screen name="Settings" component={Settings} />
-            <Tab.Screen name="Widget Preview" component={HelloWidgetPreviewScreen}/>
+            <Tab.Screen name="Union Departures" component={UnionDepartureBoard} />
           </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

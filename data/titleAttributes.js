@@ -16,7 +16,18 @@ lineColour.set("Lakeshore East", "#EF3C33");
 lineColour.set("Lakeshore West", "#8D0134");
 lineColour.set("Milton", "#DE6428");
 lineColour.set("Richmond Hill", "#01ABE8");
-lineColour.set("Stouffville", "#805116")
+lineColour.set("Stouffville", "#805116");
+
+// muted line colour to make union departure board easier on the eyes
+export let unionLineColour = new Map();
+
+unionLineColour.set("Barrie", "#1F5789");
+unionLineColour.set("Kitchener", "#3F6133");
+unionLineColour.set("Lakeshore East", "#D55D52");
+unionLineColour.set("Lakeshore West", "#865361");
+unionLineColour.set("Milton", "#D37247");
+unionLineColour.set("Stouffville", "#8C5823");
+unionLineColour.set("Richmond Hill", "#388DAE");
 
 export let fullStationName = new Map();
 
