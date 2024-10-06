@@ -1,16 +1,19 @@
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, Button} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
 import { trainLineSelections, getStops } from '../data/dropdownOptions';
 import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
+import notifee from '@notifee/react-native';
+import { onDisplayNotification } from '../services/notificationsService';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 
 function Settings() {
     const insets = useSafeAreaInsets();
     const [selectedLine, setSelectedLine] = useState("");
     const [selectedStop, setSelectedStop] = useState("");
-    const [stops, setStops] = useState([]); 
+    const [stops, setStops] = useState([]);
 
     useEffect(() => {
         getItem('line')
@@ -66,7 +69,14 @@ function Settings() {
             paddingBottom: insets.bottom,
         }}>
             <View style={styles.container}>
-                <Text style={styles.header}>Settings</Text>
+                <Text 
+                    style={ {
+                        ...styles.header,
+                        marginTop: '-6%',
+                        marginHorizontal: '-6%',
+                    }}>
+                    Settings
+                </Text>
                 <Text>Default Line</Text>
                 <SelectList 
                     setSelected={(val) => setSelectedLine(val)}
@@ -85,9 +95,9 @@ function Settings() {
                     /> :
                     <></>
                 }
-                
+                <Button title="Display Notification" onPress={() => onDisplayNotification()}/>
             </View>
-            <StatusBar style='auto'/>
+            <FocusAwareStatusBar backgroundColor="#B8DA86" />
         </View>
     )
 }
@@ -102,6 +112,8 @@ const styles = StyleSheet.create({
     header: {
         fontWeight: 'bold',
         fontSize: 30,
+        backgroundColor: "#B8DA86",
+        padding: '5%'
     },
 });
 

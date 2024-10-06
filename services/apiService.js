@@ -10,16 +10,16 @@ function lineTimeCompare(lineA, lineB) {
     const [lineAHours, lineAMins] = lineA.DisplayedDepartureTime.split(":");
     const [lineBHours, lineBMins] = lineB.DisplayedDepartureTime.split(":");
 
-    let lineAMinsSinceMidnight = lineAHours * 60 + lineAMins;
-    let lineBMinsSinceMidnight = lineBHours * 60 + lineBMins;
+    let lineAMinsSinceMidnight = parseInt(lineAHours) * 60 + parseInt(lineAMins);
+    let lineBMinsSinceMidnight = parseInt(lineBHours) * 60 + parseInt(lineBMins);
 
     // consider times 00:00-03:00 to be greater
     if (lineAHours === "00" || lineAHours == "01" || lineAHours == "02" || lineAHours == "03" ) {
-        lineAMinsSinceMidnight += 23 * 60;
+        lineAMinsSinceMidnight += 24 * 60;
     }
 
     if (lineBHours === "00" || lineBHours == "01" || lineBHours == "02" || lineBHours == "03" ) {
-        lineAMinsSinceMidnight += 23 * 60;
+        lineBMinsSinceMidnight += 24 * 60;
     }
 
     if (lineAMinsSinceMidnight > lineBMinsSinceMidnight) {
