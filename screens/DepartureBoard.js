@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { getItem } from '../utils/AsyncStorage';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes';
 import { useFocusEffect } from '@react-navigation/native';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar.js';
 
 function DepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
@@ -97,6 +98,7 @@ function DepartureBoard({ navigation }) {
         gap: 10,
       }}>
         <View style={styles.container}>
+          <FocusAwareStatusBar barStyle="light-content" /> 
           <LineName 
             lineName={line} 
             stationName={stop} 
@@ -109,7 +111,8 @@ function DepartureBoard({ navigation }) {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>    
             }
           >
-            {loading ? <ActivityIndicator size="large" /> : 
+            {/* != for XOR */}
+            {loading != refreshing ? <ActivityIndicator size="large" /> : 
               tripTimes.length != 0 ?
               tripTimes.map((trip, index) => (
                 <DepartureCard
@@ -124,7 +127,6 @@ function DepartureBoard({ navigation }) {
             }
           </ScrollView>
         </View>
-        <StatusBar style='auto'/>
       </View>
     );
 }

@@ -2,5 +2,5 @@
   <string name="app_name">TrainTrack</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
-  <string name="widget_departure_description" translatable="false">This is my first widget</string>
+  <string name="widget_departure_description" translatable="false">The TrainTrack widget instantly displays upcoming train departures, letting users stay updated without opening the app.</string>
 </resources>

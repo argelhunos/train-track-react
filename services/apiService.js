@@ -1,9 +1,10 @@
 import { getStopCode } from "../data/dropdownOptions";
 import { fullStationName, lineAbbreviation } from "../data/titleAttributes";
 import { getItem } from "../utils/AsyncStorage";
+import Constants from 'expo-constants';
 
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI"
-const KEY = process.env.EXPO_PUBLIC_API_KEY
+const KEY = Constants.expoConfig.extra.apiKey;
 
 function lineTimeCompare(lineA, lineB) {
     // must convert everything to minutes since midnight for proper handling of past midnight

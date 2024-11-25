@@ -1,13 +1,12 @@
-import {View, Text, StyleSheet, Button} from 'react-native';
+import {View, Text, StyleSheet, Button, Image} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
 import { trainLineSelections, getStops } from '../data/dropdownOptions';
 import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
-import notifee from '@notifee/react-native';
 import { onDisplayNotification } from '../services/notificationsService';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
+import settingstrain from '../assets/settingstrain.png'
 
 function Settings() {
     const insets = useSafeAreaInsets();
@@ -68,6 +67,7 @@ function Settings() {
             paddingRight: insets.right,
             paddingBottom: insets.bottom,
         }}>
+            <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
                 <Text 
                     style={ {
@@ -84,6 +84,9 @@ function Settings() {
                     save="value"
                     onSelect={onLineChange}
                     placeholder={selectedLine}
+                    boxStyles={{
+                        backgroundColor: '#EEEAE3',
+                    }}
                 />
                 <Text>Default Stop</Text>
                 {selectedLine ? 
@@ -92,12 +95,15 @@ function Settings() {
                         data={stops}
                         save='value'
                         onSelect={onStopChange}
+                        boxStyles={{
+                            backgroundColor: '#EEEAE3',
+                        }}
                     /> :
                     <></>
                 }
+                <Text style={styles.sectionTitle}>Notifications</Text>
                 <Button title="Display Notification" onPress={() => onDisplayNotification()}/>
             </View>
-            <FocusAwareStatusBar backgroundColor="#B8DA86" />
         </View>
     )
 }
@@ -112,9 +118,10 @@ const styles = StyleSheet.create({
     header: {
         fontWeight: 'bold',
         fontSize: 30,
-        backgroundColor: "#B8DA86",
-        padding: '5%'
     },
+    sectionTitle: {
+        fontWeight: 'bold'
+    }
 });
 
 export default Settings;

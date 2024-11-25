@@ -1,13 +1,10 @@
-import { ScrollView, StyleSheet, ActivityIndicator, View, Text, RefreshControl } from 'react-native';
-import { getNextService, getSchedule, getUnionDepartures } from '../services/apiService.js'
-import { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, ActivityIndicator, View, Text } from 'react-native';
+import { getUnionDepartures } from '../services/apiService.js'
+import { useEffect, useState } from 'react';
 import DepartureCard from '../components/Departure';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { getItem } from '../utils/AsyncStorage';
-import { lineAbbreviation, lineColour } from '../data/titleAttributes';
-import { useFocusEffect } from '@react-navigation/native';
 import LineName from '../components/LineName';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar.js';
 
 function UnionDepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
@@ -49,6 +46,7 @@ function UnionDepartureBoard({ navigation }) {
         paddingBottom: insets.bottom,
         gap: 10,
       }}>
+        <FocusAwareStatusBar barStyle="light-content" /> 
         <View style={styles.container}>
           <LineName 
             lineName="Union Departures" 
@@ -72,7 +70,6 @@ function UnionDepartureBoard({ navigation }) {
             }
           </ScrollView>
         </View>
-        <StatusBar style='auto'/>
       </View>
     );
 }

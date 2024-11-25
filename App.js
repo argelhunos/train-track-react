@@ -14,11 +14,10 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
           <Tab.Navigator
-            screenOptions={({ route }) => ({ 
-              headerShown: false,
+            screenOptions={({ route }) => ({
+              headerShown: false, 
               tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
-
                 if (route.name === "Departure Board") {
                   iconName = "departure-board";
                 } else if (route.name === "Settings") {
@@ -35,8 +34,8 @@ export default function App() {
             })}
           >
             <Tab.Screen name="Departure Board" component={DepartureBoard} />
-            <Tab.Screen name="Settings" component={Settings} />
             <Tab.Screen name="Union Departures" component={UnionDepartureBoard} />
+            <Tab.Screen name="Settings" component={Settings} />
           </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
