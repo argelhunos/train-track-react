@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import DepartureBoard from './screens/DepartureBoard';
 import Settings from './screens/Settings';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { HelloWidgetPreviewScreen } from './screens/HelloWidgetPreviewScreen';
+import './gesture-handler';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import UnionDepartureBoard from './screens/UnionDepartureBoard';
 

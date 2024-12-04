@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Button, Image} from 'react-native';
+import {View, Text, StyleSheet, Image} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
@@ -6,7 +6,9 @@ import { trainLineSelections, getStops } from '../data/dropdownOptions';
 import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
 import { onDisplayNotification } from '../services/notificationsService';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
-import settingstrain from '../assets/settingstrain.png'
+import LineName from '../components/LineName';
+import SettingsItem from '../components/SettingsItem';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 function Settings() {
     const insets = useSafeAreaInsets();
@@ -62,6 +64,7 @@ function Settings() {
     return (
         <View style={{
             flex: 1,
+            backgroundColor: '#fff',
             paddingTop: insets.top,
             paddingLeft: insets.left,
             paddingRight: insets.right,
@@ -69,16 +72,30 @@ function Settings() {
         }}>
             <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
-                <Text 
-                    style={ {
-                        ...styles.header,
-                        marginTop: '-6%',
-                        marginHorizontal: '-6%',
-                    }}>
-                    Settings
-                </Text>
-                <Text>Default Line</Text>
-                <SelectList 
+                <LineName 
+                    lineName="Settings"
+                    lineColour="#CECECD"
+                    icon={<MaterialIcons name="settings" size={50} color="black" />}
+                />
+                <Text style={styles.sectionTitle}>Default Trip</Text>
+                <SettingsItem 
+                    img={<MaterialIcons name="location-pin" size={40} color="#10385B" />}
+                    bgimg="#7EB4E4"
+                    text="Default Stop"
+                />
+                <SettingsItem 
+                    img={<Image source={require('../assets/gotrainicon.png')}/>}
+                    bgimg="#8EB888"
+                    text="Default Line"
+                />
+                <Text style={styles.sectionTitle}>Notification Settings</Text>
+                <SettingsItem 
+                    img={<MaterialIcons name="notifications" size={40} color="#D78B07" />}
+                    bgimg="#FED691"
+                    text="Set Notifications"
+                />
+
+                {/* <SelectList 
                     setSelected={(val) => setSelectedLine(val)}
                     data={trainLineSelections}
                     save="value"
@@ -88,7 +105,7 @@ function Settings() {
                         backgroundColor: '#EEEAE3',
                     }}
                 />
-                <Text>Default Stop</Text>
+
                 {selectedLine ? 
                     <SelectList 
                         setSelected={(val) => setSelectedStop(val)}
@@ -100,9 +117,9 @@ function Settings() {
                         }}
                     /> :
                     <></>
-                }
-                <Text style={styles.sectionTitle}>Notifications</Text>
-                <Button title="Display Notification" onPress={() => onDisplayNotification()}/>
+                } */}
+                {/* <Text style={styles.sectionTitle}>Notifications</Text>
+                <Button title="Display Notification" onPress={() => onDisplayNotification()}/> */}
             </View>
         </View>
     )
@@ -113,14 +130,11 @@ const styles = StyleSheet.create({
       backgroundColor: '#fff',
       flex: 1,
       padding: '5%',
-      gap: 5,
-    },
-    header: {
-        fontWeight: 'bold',
-        fontSize: 30,
+      gap: 15,
     },
     sectionTitle: {
-        fontWeight: 'bold'
+        fontWeight: '500',
+        fontSize: 20
     }
 });
 

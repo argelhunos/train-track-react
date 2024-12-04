@@ -1,11 +1,11 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { StyleSheet, Text, View } from 'react-native';
 
-function LineName({lineName, stationName, lineAbbreviation, lineColour}) {
+function LineName({lineName, stationName, lineAbbreviation, lineColour, icon}) {
     return (
         <View>
             <View style={styles.container}>
-                <MaterialIcons name='train' size={50} color="black"/>
+                {icon ? icon : <MaterialIcons name='train' size={50} color="black"/>}
                 {lineAbbreviation && <Text style={{
                     backgroundColor: lineColour,
                     color: 'white',
