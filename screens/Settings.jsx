@@ -9,57 +9,15 @@ import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 import LineName from '../components/LineName';
 import SettingsItem from '../components/SettingsItem';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+
+const Stack = createStackNavigator();
 
 function Settings() {
     const insets = useSafeAreaInsets();
-    const [selectedLine, setSelectedLine] = useState("");
-    const [selectedStop, setSelectedStop] = useState("");
     const [stops, setStops] = useState([]);
-
-    useEffect(() => {
-        getItem('line')
-            .then(data => {
-                setSelectedLine(data);
-                getStops()
-                    .then(data => setStops(data));
-            })
-            .catch(error => console.log(error));
-        
-        getItem('stop')
-            .then(data => {
-                setSelectedStop(data);
-            })
-            .catch(error => console.log(error));
-
-        console.log("done!");
-    }, [])
-
-    const onLineChange = () => {
-        // if line selected was the same as previous, exit early.
-        try {
-            let oldLine = getItem('line');
-            if (oldLine === selectedLine) {
-                return
-            }
-        } catch (error) {
-            console.error(error);
-        }
-
-        // select list already handles state change, just need to save it to async storage
-        setItem('line', selectedLine)
-            .then(() => {
-                // update stops each time the line changes.
-                getStops()
-                    .then(data => setStops(data))
-            })
-        // erase selected stop with line change, 
-        setSelectedStop("");
-        removeItem('stop');
-    }
-
-    const onStopChange = () => {
-        setItem('stop', selectedStop)
-    }
+    const navigation = useNavigation();
 
     return (
         <View style={{
@@ -138,4 +96,16 @@ const styles = StyleSheet.create({
     }
 });
 
-export default Settings;
+function SettingsStack() {
+    return (
+        <Stack.Navigator 
+            screenOptions={{
+                headerShown: false
+            }}
+        >
+            <Stack.Screen name="SettingsStack" component={Settings}/>
+        </Stack.Navigator>
+    )
+}
+
+export default SettingsStack;

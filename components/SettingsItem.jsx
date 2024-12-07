@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableNativeFeedback, View, Platform } from "react-native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-function SettingsItem({img, bgimg, text}) {
+function SettingsItem({img, bgimg, text, onPress}) {
     return (
         <View style={styles.container}>
             <View style={{
@@ -11,9 +11,19 @@ function SettingsItem({img, bgimg, text}) {
                 {img}
             </View>
             <Text style={styles.selectionName}>{text}</Text>
-            <View style={styles.arrowButton}>
-                <MaterialIcons name="arrow-forward" size={24} color="black" />  
-            </View>
+            <TouchableNativeFeedback
+                background={
+                    Platform.OS === 'android'
+                    ? TouchableNativeFeedback.SelectableBackground()
+                    : undefined
+                }
+                style={{borderRadius: 30}}
+                onPress={onPress}
+            >
+                <View style={styles.arrowButton}>
+                    <MaterialIcons name="arrow-forward" size={24} color="black" />  
+                </View>
+            </TouchableNativeFeedback>
         </View>
     )
 }

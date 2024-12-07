@@ -1,14 +1,14 @@
 import { ScrollView, StyleSheet, ActivityIndicator, View, Text, RefreshControl } from 'react-native';
 import { getNextService, getSchedule } from '../services/apiService.js'
 import { useCallback, useState } from 'react';
-import LineName from '../components/LineName';
-import DepartureCard from '../components/Departure';
+import LineName from '../components/LineName.jsx';
+import DepartureCard from '../components/Departure.jsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { getItem } from '../utils/AsyncStorage';
-import { lineAbbreviation, lineColour } from '../data/titleAttributes';
+import { getItem } from '../utils/AsyncStorage.js';
+import { lineAbbreviation, lineColour } from '../data/titleAttributes.js';
 import { useFocusEffect } from '@react-navigation/native';
-import FocusAwareStatusBar from '../components/FocusAwareStatusBar.js';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar.jsx';
 
 function DepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);

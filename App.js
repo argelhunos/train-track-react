@@ -1,7 +1,8 @@
+import './gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import DepartureBoard from './screens/DepartureBoard';
-import Settings from './screens/Settings';
+import SettingsStack from './screens/Settings';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './gesture-handler';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -35,7 +36,7 @@ export default function App() {
           >
             <Tab.Screen name="Departure Board" component={DepartureBoard} />
             <Tab.Screen name="Union Departures" component={UnionDepartureBoard} />
-            <Tab.Screen name="Settings" component={Settings} />
+            <Tab.Screen name="Settings" component={SettingsStack} />
           </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

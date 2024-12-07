@@ -1,10 +1,10 @@
 import { ScrollView, StyleSheet, ActivityIndicator, View, Text } from 'react-native';
 import { getUnionDepartures } from '../services/apiService.js'
 import { useEffect, useState } from 'react';
-import DepartureCard from '../components/Departure';
+import DepartureCard from '../components/Departure.jsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import LineName from '../components/LineName';
-import FocusAwareStatusBar from '../components/FocusAwareStatusBar.js';
+import LineName from '../components/LineName.jsx';
+import FocusAwareStatusBar from '../components/FocusAwareStatusBar.jsx';
 
 function UnionDepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
