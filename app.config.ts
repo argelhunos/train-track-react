@@ -38,5 +38,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: "badb8d77-7acc-4ef2-9a9f-8fa291453b29"
     }
+  },
+  android: {
+    config: {
+      googleMaps: {
+        apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY
+      }
+    },
+    package: "com.anonymous.TrainTrack"
   }
 });

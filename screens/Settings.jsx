@@ -11,6 +11,7 @@ import SettingsItem from '../components/SettingsItem';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import DefaultStop from './DefaultStop';
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,7 @@ function Settings() {
                     img={<MaterialIcons name="location-pin" size={40} color="#10385B" />}
                     bgimg="#7EB4E4"
                     text="Default Stop"
+                    onPress={() => navigation.navigate("Default Stop")}
                 />
                 <SettingsItem 
                     img={<Image source={require('../assets/gotrainicon.png')}/>}
@@ -104,6 +106,7 @@ function SettingsStack() {
             }}
         >
             <Stack.Screen name="SettingsStack" component={Settings}/>
+            <Stack.Screen name="Default Stop" component={DefaultStop}/>
         </Stack.Navigator>
     )
 }
