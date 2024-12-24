@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Image} from 'react-native';
+import {View, Text, StyleSheet, Image, TouchableNativeFeedback, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
@@ -22,6 +22,12 @@ function DefaultStop() {
     const insets = useSafeAreaInsets();
     const [stops, setStops] = useState([]);
     const navigation = useNavigation();
+    const [defaultStop, setDefaultStop] = useState("");
+
+    useEffect(() => {
+      getItem("stop")
+        .then(result => setDefaultStop(result))
+    }, []);
 
     const onLineChange = () => {
         // if line selected was the same as previous, exit early.
@@ -53,7 +59,7 @@ function DefaultStop() {
             paddingTop: insets.top,
             paddingLeft: insets.left,
             paddingRight: insets.right,
-            paddingBottom: insets.bottom + 150,
+            paddingBottom: insets.bottom + 200,
         }}>
             <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
@@ -114,37 +120,38 @@ function DefaultStop() {
                                 title={stop.title}
                                 coordinate={stop.coordinate}
                                 key={stop.title}
-                                
+                                onPress={(e) => {
+                                  setItem('stop', e._targetInst.return.key)
+                                    .then(setDefaultStop(e._targetInst.return.key))
+                                    return setItem('line', stop.line);
+                                }}
+                                id={stop.title}
                             >
-                                <View style={styles.mapMarker}></View>
+                                <View style={
+                                  {
+                                    ...styles.mapMarker,
+                                    backgroundColor: stop.title === defaultStop ? "#FFD700" : styles.mapMarker.backgroundColor
+                                  }
+                                }
+                                ></View>
                             </Marker>
                         )}
                     </MapView>
                 </View>
-
-                <SelectList 
-                    // setSelected={(val) => setSelectedLine(val)}
-                    data={trainLineSelections}
-                    save="value"
-                    onSelect={onLineChange}
-                    placeholder={"test"}
-                    boxStyles={{
-                        backgroundColor: '#EEEAE3',
-                    }}
-                />
-
-                {/* {selectedLine ? 
-                    <SelectList 
-                        // setSelected={(val) => setSelectedStop(val)}
-                        data={stops}
-                        save='value'
-                        onSelect={onStopChange}
-                        boxStyles={{
-                            backgroundColor: '#EEEAE3',
-                        }}
-                    /> :
-                    <></>
-                } */}
+                <Text style={styles.sectionTitle}>Your stop:</Text>
+                <TouchableNativeFeedback
+                  background={
+                    Platform.OS === 'android'
+                    ? TouchableNativeFeedback.SelectableBackground()
+                    : undefined
+                  }
+                  onPress={() => navigation.navigate("Default Stop Modal")}
+                >
+                  <View style={styles.stopSelector}>
+                    <MaterialIcons name='location-pin' size={25} color="#4B8511" />
+                    <Text style={styles.stopSelectorText}>{defaultStop}</Text>
+                  </View>
+                </TouchableNativeFeedback>
             </View>
         </View>
     )
@@ -181,6 +188,19 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderRadius: 10,
         marginTop: 30
+    },
+    stopSelector: {
+      display: 'flex',
+      width: '100%',
+      padding: 15,
+      backgroundColor: '#DADFD5',
+      borderRadius: 20,
+      flexDirection: 'row',
+      gap: 10,
+      alignItems: 'center'
+    },
+    stopSelectorText: {
+      fontSize: 15
     }
 });
 

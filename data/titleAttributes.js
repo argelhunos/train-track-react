@@ -11,12 +11,19 @@ lineAbbreviation.set("Stouffville", "ST");
 export let lineColour = new Map();
 
 lineColour.set("Barrie", "#005F9F");
+lineColour.set("BR", "#005F9F");
 lineColour.set("Kitchener", "#00863E");
+lineColour.set("KI", "#00863E");
 lineColour.set("Lakeshore East", "#EF3C33");
+lineColour.set("LE", "#EF3C33");
 lineColour.set("Lakeshore West", "#8D0134");
+lineColour.set("LW", "#8D0134");
 lineColour.set("Milton", "#DE6428");
+lineColour.set("MI", "#DE6428");
 lineColour.set("Richmond Hill", "#01ABE8");
+lineColour.set("RH", "#01ABE8");
 lineColour.set("Stouffville", "#805116");
+lineColour.set("ST", "#805116");
 
 // muted line colour to make union departure board easier on the eyes
 export let unionLineColour = new Map();

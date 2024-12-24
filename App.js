@@ -23,8 +23,8 @@ export default function App() {
                   iconName = "departure-board";
                 } else if (route.name === "Settings") {
                   iconName = "settings"
-                } else {
-                  iconName = "settings"
+                } else if (route.name === "Union Departures") {
+                  iconName = "commit"
                 }
 
                 // return icon woo

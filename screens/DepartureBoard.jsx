@@ -119,7 +119,7 @@ function DepartureBoard({ navigation }) {
                   platform={trip.DisplayedPlatform}
                   time={trip.DisplayedDepartureTime}
                   destination={trip.DirectionName}
-                  key={trip.ScheduledDepartureTime}
+                  key={trip.Tr}
                   tripNumber={trip.TripNumber}
                   isDelayed={trip.Delayed}
                 />

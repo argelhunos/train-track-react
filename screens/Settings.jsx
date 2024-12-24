@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Image} from 'react-native';
+import {View, Text, StyleSheet, Image, Pressable} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import DefaultStop from './DefaultStop';
+import DefaultStopModal from './DefaultStopModal';
 
 const Stack = createStackNavigator();
 
@@ -31,11 +32,15 @@ function Settings() {
         }}>
             <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
-                <LineName 
-                    lineName="Settings"
-                    lineColour="#CECECD"
-                    icon={<MaterialIcons name="settings" size={50} color="black" />}
-                />
+                <Pressable onPress={() => { console.warn("hi")}}>
+                    <View>
+                        <LineName 
+                            lineName="Settings"
+                            lineColour="#CECECD"
+                            icon={<MaterialIcons name="settings" size={50} color="black" />}
+                        />
+                    </View>
+                </Pressable>
                 <Text style={styles.sectionTitle}>Default Trip</Text>
                 <SettingsItem 
                     img={<MaterialIcons name="location-pin" size={40} color="#10385B" />}
@@ -43,43 +48,12 @@ function Settings() {
                     text="Default Stop"
                     onPress={() => navigation.navigate("Default Stop")}
                 />
-                <SettingsItem 
-                    img={<Image source={require('../assets/gotrainicon.png')}/>}
-                    bgimg="#8EB888"
-                    text="Default Line"
-                />
                 <Text style={styles.sectionTitle}>Notification Settings</Text>
                 <SettingsItem 
                     img={<MaterialIcons name="notifications" size={40} color="#D78B07" />}
                     bgimg="#FED691"
                     text="Set Notifications"
                 />
-
-                {/* <SelectList 
-                    setSelected={(val) => setSelectedLine(val)}
-                    data={trainLineSelections}
-                    save="value"
-                    onSelect={onLineChange}
-                    placeholder={selectedLine}
-                    boxStyles={{
-                        backgroundColor: '#EEEAE3',
-                    }}
-                />
-
-                {selectedLine ? 
-                    <SelectList 
-                        setSelected={(val) => setSelectedStop(val)}
-                        data={stops}
-                        save='value'
-                        onSelect={onStopChange}
-                        boxStyles={{
-                            backgroundColor: '#EEEAE3',
-                        }}
-                    /> :
-                    <></>
-                } */}
-                {/* <Text style={styles.sectionTitle}>Notifications</Text>
-                <Button title="Display Notification" onPress={() => onDisplayNotification()}/> */}
             </View>
         </View>
     )
@@ -105,8 +79,13 @@ function SettingsStack() {
                 headerShown: false
             }}
         >
-            <Stack.Screen name="SettingsStack" component={Settings}/>
-            <Stack.Screen name="Default Stop" component={DefaultStop}/>
+            <Stack.Group>
+                <Stack.Screen name="SettingsStack" component={Settings}/>
+                <Stack.Screen name="Default Stop" component={DefaultStop}/>
+            </Stack.Group>
+            <Stack.Group screenOptions={{ presentation: 'modal' }}>
+                <Stack.Screen name="Default Stop Modal" component={DefaultStopModal}/>
+            </Stack.Group>
         </Stack.Navigator>
     )
 }
