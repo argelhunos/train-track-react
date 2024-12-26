@@ -56,7 +56,7 @@ function DefaultStopModal() {
                 <FlatList 
                     data={DATA}
                     renderItem={({item}) => 
-                        <DefaultStopLineItem lineName={item.title} stations={item.data.map(x => ({id: item.id + x, title: x}))}/>
+                        <DefaultStopLineItem lineName={item.title} stations={item.data.map(x => ({id: item.id + x + "-" + item.title, title: x}))}/>
                     }
                     keyExtractor={item => item.id}
                 />

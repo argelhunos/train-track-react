@@ -1,7 +1,7 @@
 import {View, Text, StyleSheet, Image, TouchableNativeFeedback, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from 'react-native-dropdown-select-list';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { trainLineSelections, getStops } from '../data/dropdownOptions';
 import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
 import { onDisplayNotification } from '../services/notificationsService';
@@ -18,39 +18,43 @@ import trainStops from '../utils/trainStops';
 
 const Stack = createStackNavigator();
 
-function DefaultStop() {
+function DefaultStop({ route }) {
     const insets = useSafeAreaInsets();
     const [stops, setStops] = useState([]);
     const navigation = useNavigation();
     const [defaultStop, setDefaultStop] = useState("");
+    const mapRef = useRef(null);
+
+    const animateToStation = (stationName) => {
+      mapRef.current.animateToRegion(
+        {
+          latitude: trainStops.find(stop => stop.title === stationName).coordinate.latitude,
+          longitude: trainStops.find(stop => stop.title === stationName).coordinate.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421
+        }
+      );
+    }
 
     useEffect(() => {
       getItem("stop")
-        .then(result => setDefaultStop(result))
+        .then(result => {
+          setDefaultStop(result);
+          if (result != null) {
+            animateToStation(result);
+          }
+        })
     }, []);
 
-    const onLineChange = () => {
-        // if line selected was the same as previous, exit early.
-        try {
-            let oldLine = getItem('line');
-            if (oldLine === selectedLine) {
-                return
-            }
-        } catch (error) {
-            console.error(error);
-        }
-
-        // select list already handles state change, just need to save it to async storage
-        setItem('line', selectedLine)
-            .then(() => {
-                // update stops each time the line changes.
-                getStops()
-                    .then(data => setStops(data))
-            })
-        // erase selected stop with line change, 
-        setSelectedStop("");
-        removeItem('stop');
-    }
+    // effect to monitor update from modal
+    useEffect(() => {
+      if (route.params?.stationName && route.params?.lineName) {
+        setItem('stop', route.params?.stationName)
+          .then(setDefaultStop(route.params?.stationName))
+          .then(setItem('line', route.params?.lineName))
+          .then(animateToStation(route.params?.stationName));
+      }
+    }, [route.params?.stationName, route.params?.lineName])
 
     return (
         <View style={{
@@ -70,6 +74,7 @@ function DefaultStop() {
                 />
                 <View style={styles.mapParentContainer}>
                     <MapView
+                        ref={mapRef}
                         provider={PROVIDER_GOOGLE} 
                         style={styles.map}
                         initialRegion={{
@@ -80,6 +85,7 @@ function DefaultStop() {
                         }}
                         customMapStyle={mapStyle}
                     >
+                        {/* probably want to change this to a .map one day */}
                         <Polyline
                             coordinates={kitchenerCoordinates}
                             strokeColor="#01773C"

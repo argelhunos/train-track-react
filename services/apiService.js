@@ -99,6 +99,11 @@ export async function getNextService() {
         const response = await fetch(`${BASE_URL}/api/V1/Stop/NextService/${stopCode}?key=${KEY}`);
         let data = await response.json();
 
+        // Check if "Lines" is null or undefined
+        if (!data["NextService"] || !data["NextService"]["Lines"]) {
+            return [];
+        }
+
         // if "Lines" is null, there are no departures found.
         return data["NextService"]["Lines"]
             .filter((line) => line.LineName === userLine)

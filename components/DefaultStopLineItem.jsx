@@ -2,6 +2,7 @@ import { StyleSheet, Text, TouchableNativeFeedback, View, Platform, LayoutAnimat
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from "react";
 import { lineColour } from "../data/titleAttributes";
+import { useNavigation } from "@react-navigation/native";
 
 if (
     Platform.OS === 'android' &&
@@ -12,9 +13,20 @@ if (
 
 function DefaultStopLineItem({lineName, stations}) {
     const [active, setActive] = useState(false);
+    const navigation = useNavigation();
 
-    function onPress() {
+    const onLinePress = () => {
         setActive(!active);    
+    }
+
+    const onStationPress = (stationItem) => {
+        const stationName = stationItem.title;
+        const lineName = stationItem.id.split("-")[1];
+
+        navigation.navigate("Default Stop", {
+            stationName: stationName,
+            lineName: lineName
+        });
     }
 
     return (
@@ -27,7 +39,7 @@ function DefaultStopLineItem({lineName, stations}) {
                 }
                 onPress={() => {
                     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    onPress();
+                    onLinePress();
                 }}
             >
                 <View>
@@ -41,17 +53,21 @@ function DefaultStopLineItem({lineName, stations}) {
                 <FlatList
                     data={stations}
                     renderItem={({item}) =>
-                        <View style={styles.station}>
-                            <View style={
-                                {
-                                    ...styles.stationIcon,
-                                    backgroundColor: lineColour.get(item.id.substring(0, 2))
-                                }
-                            }>
-                                <Text style={styles.stationIconText}>{item.id.substring(0, 2)}</Text>
+                        <TouchableNativeFeedback
+                            onPress={() => onStationPress(item)}
+                        >
+                            <View style={styles.station}>
+                                <View style={
+                                    {
+                                        ...styles.stationIcon,
+                                        backgroundColor: lineColour.get(item.id.substring(0, 2))
+                                    }
+                                }>
+                                    <Text style={styles.stationIconText}>{item.id.substring(0, 2)}</Text>
+                                </View>
+                                <Text>{item.title}</Text>
                             </View>
-                            <Text>{item.title}</Text>
-                        </View>
+                        </TouchableNativeFeedback>
                     }
                     keyExtractor={item => item.id}
                 />
