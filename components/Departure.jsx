@@ -39,23 +39,6 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
                 setLoadingMoreInfo(false);
                 setExpanded(!expanded);
             })
-
-        // getSchedule(tripNumber)
-        //     .then(data => {
-        //         setTripStops(data);
-        //         setLoadingMoreInfo(false);
-        //         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        //         setExpanded(!expanded);
-        //     })
-        //     .catch((error) => {
-        //         console.log(error);
-        //         setLoadingMoreInfo(false);
-        //         setExpanded(!expanded);
-        //     })
-        //     .finally(() => {
-        //         getMergedTripDetails(tripNumber)
-        //             .then((data) => console.log(data))
-        //     })
     }
 
     return (

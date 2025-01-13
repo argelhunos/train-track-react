@@ -10,7 +10,7 @@ export const trainLineSelections = [
     {key: '7', value: 'Stouffville'},
 ]
 
-let stopMap = new Map();
+export let stopMap = new Map();
 
 stopMap.set('Barrie', [
     {name: "Downsview Park GO", code: "DW"},
@@ -113,6 +113,17 @@ export const getStops = async () => {
         return [];
     }
 };
+
+export const getStopsWithLine = async (line) => {
+    try {
+        let stops = stopMap.get(line);
+        stops = stops.map((info, index) => ({ key: index + 1, value: info.name })); // convert to object needed with SelectList
+        return stops;
+    } catch (error) {
+        console.log(error);
+        return [];
+    }
+}
 
 // get the correct stop from dropdownOptions based on user selected line and stop
 export const getStopCode = async () => {

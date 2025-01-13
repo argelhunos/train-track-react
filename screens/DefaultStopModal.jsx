@@ -1,4 +1,4 @@
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet } from "react-native";
 import DefaultStopLineItem from "../components/DefaultStopLineItem";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

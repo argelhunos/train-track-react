@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Image, TouchableNativeFeedback, Platform } from 'react-native';
+import {View, Text, StyleSheet, Image, TouchableNativeFeedback, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useRef, useState } from 'react';
@@ -67,11 +67,13 @@ function DefaultStop({ route }) {
         }}>
             <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
-                <LineName 
-                    lineName="Default Stop"
-                    lineColour="#CECECD"
-                    icon={<MaterialIcons name="arrow-back" size={50} color="black" />}
-                />
+                <Pressable onPress={() => navigation.goBack()}>
+                  <LineName 
+                      lineName="Default Stop"
+                      lineColour="#CECECD"
+                      icon={<MaterialIcons name="arrow-back" size={50} color="black" />}
+                  />
+                </Pressable>
                 <View style={styles.mapParentContainer}>
                     <MapView
                         ref={mapRef}

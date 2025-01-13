@@ -33,7 +33,7 @@ export function DepartureWidget({ lineAbbr, lineName, stopName, departures, colo
                 >
                     <ImageWidget 
                         image={require('../assets/train.png')}
-                        imageWidth={35}
+                        imageWidth={30}
                         imageHeight={35}
                     />
                     <TextWidget
