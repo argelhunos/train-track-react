@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View, Platform, LayoutAnimation, UIManager, Pressable, Switch } from 'react-native';
+import { StyleSheet, Text, View, Platform, LayoutAnimation, UIManager, Pressable, Switch, TouchableNativeFeedback } from 'react-native';
 import { useEffect, useState } from 'react';
 import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
 import Stop from './Stop';
-import { lineColour } from '../data/titleAttributes';
+import { lineAbbreviation, lineColour } from '../data/titleAttributes';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as SQLite from 'expo-sqlite';
 
 if (
     Platform.OS === 'android' &&
@@ -12,7 +13,19 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-function SavedNotification ({time, line, station, isActive}) {
+const toggleNotificationActive = async (id) => {
+    try {
+        const db = await SQLite.openDatabaseAsync("notifications");
+        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE id = ?;`, id);
+        console.log("Notification toggled");
+        const allRows = await db.getAllAsync('SELECT * FROM notifications');
+        console.log(allRows);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
     const [expanded, setExpanded] = useState(false);
     const [notificationActive, setNotificationActive] = useState(isActive ? true : false);
 
@@ -21,7 +34,11 @@ function SavedNotification ({time, line, station, isActive}) {
         setExpanded(!expanded);
     }
 
-    const onTogglePress = () => setNotificationActive(!notificationActive);
+    const onTogglePress = (id) => {
+        toggleNotificationActive(id)
+            .then(() => { setNotificationActive(!notificationActive) })
+            .catch((error) => console.log(error));
+    }
 
     return (
         <View style={styles.parentContainer}>
@@ -35,7 +52,7 @@ function SavedNotification ({time, line, station, isActive}) {
                                 backgroundColor: lineColour.get(line),
                             }
                         }>
-                            <Text style={styles.lineAbbr}>KI</Text>
+                            <Text style={styles.lineAbbr}>{lineAbbreviation.get(line)}</Text>
                         </View>
                         <Text>
                             {line} - {station}
@@ -52,28 +69,27 @@ function SavedNotification ({time, line, station, isActive}) {
                             : <MaterialIcons name="keyboard-arrow-down" size={24} color="white" 
                         />}
                     </Pressable>
-                    <Switch value={notificationActive} onValueChange={onTogglePress}/>
+                    <Switch value={notificationActive} onValueChange={() => onTogglePress(id)}/>
                 </View>
             </View>
-            {/* {expanded && !loadingMoreInfo ?
-                <View style={styles.stops}>
-                    {tripStops.map(stop => 
-                        <Stop
-                            station={stop.Station}
-                            departureTime={stop.DepartureTime.Scheduled}
-                            platform={stop.Track.Scheduled}
-                            key={stop.Station}
-                            isFirstStop={stop.isFirstStop}
-                            isLastStop={stop.isLastStop}
-                            hasVisited={stop.hasVisited}
-                        />
-                    )}
-                    {tripStops.length === 0 && 
-                        <Text style={styles.error}>Unable to find further info.</Text>
-                    }
+            {expanded && 
+                <View style={styles.expandedOptionsList}>
+                    <TouchableNativeFeedback>
+                        <View style={styles.expandedOptions}>
+                            <MaterialIcons name="edit" size={24} color="black" />
+                            <Text>Edit Line and Station</Text>
+                        </View>
+                    </TouchableNativeFeedback>
+                    <TouchableNativeFeedback
+                        onPress={() => deleteMethod(id)}
+                    >
+                        <View style={styles.expandedOptions}>
+                            <MaterialIcons name="delete" size={24} color="black" />
+                            <Text>Delete</Text>
+                        </View>
+                    </TouchableNativeFeedback>
                 </View>
-                : <></>
-            } */}
+            }
         </View>        
     )
 }
@@ -133,6 +149,17 @@ const styles = StyleSheet.create({
     lineAbbr: {
         color: 'white',
         fontWeight: '800'
+    },
+    expandedOptionsList: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12
+    },
+    expandedOptions: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8
     }
 });
 
