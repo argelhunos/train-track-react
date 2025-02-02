@@ -9,6 +9,8 @@ import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
+import * as notifications from 'expo-notifications';
+import { useNotification } from '../context/NotificationContext';
 
 const Stack = createStackNavigator();
 
@@ -103,11 +105,22 @@ const deleteNotification = async (id) => {
     }
 }
 
+const testExpoNotification = async () => {
+    notifications.scheduleNotificationAsync({
+        content: {
+            title: "testing",
+            body: "please tell me this is going to work"
+        },
+        trigger: null
+    })
+}
+
 function Notifications({ route }) {
     const [isLoading, setIsLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const { notification, expoPushToken, error } = useNotification();
 
     // defined inside since has to update state of notifications
     const onDeletePress = async (id) => {
@@ -121,6 +134,7 @@ function Notifications({ route }) {
     }
 
     useEffect(() => {
+        console.log(expoPushToken);
         initDB()
             .then(data => {
                 return fetchNotifications();
@@ -158,12 +172,13 @@ function Notifications({ route }) {
                 <Pressable
                     onPress={() => navigation.goBack()}
                 >
+                    <Text>push token: {expoPushToken}</Text>
                     <LineName 
                         lineName="Notifications"
                         lineColour="#CECECD"
                         icon={<MaterialIcons name="arrow-back" size={50} color="black" />}
                     />
-                </Pressable> 
+                </Pressable>
                 <View style={styles.noNotifsMsg}>
                     <ScrollView>
                         {isLoading ? <Text>No notifications.</Text> : notifications.map((notification) => {

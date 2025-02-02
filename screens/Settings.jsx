@@ -15,6 +15,7 @@ import DefaultStop from './DefaultStop';
 import DefaultStopModal from './DefaultStopModal';
 import Notifications from './Notifications';
 import NotificationsModal from './NotificationsModal';
+import { NotificationProvider } from '../context/NotificationContext';
 
 const Stack = createStackNavigator();
 
@@ -77,23 +78,25 @@ const styles = StyleSheet.create({
 
 function SettingsStack() {
     return (
-        <Stack.Navigator 
-            screenOptions={{
-                headerShown: false
-            }}
-        >
-            <Stack.Group>
-                <Stack.Screen name="SettingsStack" component={Settings}/>
-                <Stack.Screen name="Default Stop" component={DefaultStop}/>
-                <Stack.Screen name="Notifications" component={Notifications}/>
-            </Stack.Group>
-            <Stack.Group screenOptions={{ presentation: 'modal' }}>
-                <Stack.Screen name="Default Stop Modal" component={DefaultStopModal}/>
-            </Stack.Group>
-            <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>
-                <Stack.Screen name="Notifications Modal" component={NotificationsModal}/>
-            </Stack.Group>
-        </Stack.Navigator>
+        <NotificationProvider>
+            <Stack.Navigator 
+                screenOptions={{
+                    headerShown: false
+                }}
+            >
+                <Stack.Group>
+                    <Stack.Screen name="SettingsStack" component={Settings}/>
+                    <Stack.Screen name="Default Stop" component={DefaultStop}/>
+                    <Stack.Screen name="Notifications" component={Notifications}/>
+                </Stack.Group>
+                <Stack.Group screenOptions={{ presentation: 'modal' }}>
+                    <Stack.Screen name="Default Stop Modal" component={DefaultStopModal}/>
+                </Stack.Group>
+                <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>
+                    <Stack.Screen name="Notifications Modal" component={NotificationsModal}/>
+                </Stack.Group>
+            </Stack.Navigator>
+        </NotificationProvider>
     )
 }
 
