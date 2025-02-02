@@ -9,6 +9,7 @@ import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
+import messaging from '@react-native-firebase/messaging';
 
 const Stack = createStackNavigator();
 
@@ -103,6 +104,16 @@ const deleteNotification = async (id) => {
     }
 }
 
+async function onAppBootstrap() {
+    // Register the device with FCM
+    await messaging().registerDeviceForRemoteMessages();
+  
+    // Get the token
+    const token = await messaging().getToken();
+  
+    console.log('FCM Token:', token);
+}
+
 function Notifications({ route }) {
     const [isLoading, setIsLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
@@ -121,6 +132,7 @@ function Notifications({ route }) {
     }
 
     useEffect(() => {
+        onAppBootstrap();
         initDB()
             .then(data => {
                 return fetchNotifications();
