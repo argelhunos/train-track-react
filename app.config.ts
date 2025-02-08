@@ -32,7 +32,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'TrainTrack',
   slug: 'TrainTrack',
-  plugins: [['react-native-android-widget', widgetConfig]],
+  plugins: [
+    ['react-native-android-widget', widgetConfig],
+    "@react-native-firebase/app"
+  ],
   extra: {
     apiKey: process.env.EXPO_PUBLIC_API_KEY,
     eas: {
@@ -45,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY
       }
     },
-    package: "com.anonymous.TrainTrack"
+    package: "com.anonymous.TrainTrack",
+    googleServicesFile: "./google-services.json",
   }
 });

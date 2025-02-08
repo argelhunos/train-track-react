@@ -7,9 +7,38 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './gesture-handler';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import UnionDepartureBoard from './screens/UnionDepartureBoard';
+import { Alert } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
+import { useEffect } from 'react';
+import * as Application from 'expo-application';
+import firestore from '@react-native-firebase/firestore';
 
 export default function App() {
   const Tab = createBottomTabNavigator();
+
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+    });
+
+    messaging().getToken().then(token => {
+      console.log(token);
+      firestore()
+        .collection('users')
+        .doc(Application.getAndroidId())
+        .set({
+          fcmToken: token,
+        })
+        .then(() => {
+          console.log("FCM token saved to Firestore");
+        });
+    });
+
+    const userId = Application.getAndroidId();
+    console.log("Unique device ID: " + userId);
+
+    return unsubscribe;
+  }, []);
 
   return (
     <SafeAreaProvider>

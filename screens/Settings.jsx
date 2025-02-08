@@ -15,16 +15,8 @@ import DefaultStop from './DefaultStop';
 import DefaultStopModal from './DefaultStopModal';
 import Notifications from './Notifications';
 import NotificationsModal from './NotificationsModal';
-import messaging from '@react-native-firebase/messaging';
-
-// Note that an async function or a function that returns a Promise 
-// is required for both subscribers.
-async function onMessageReceived(message) {
-  // Do something
-}
-
-messaging().onMessage(onMessageReceived);
-messaging().setBackgroundMessageHandler(onMessageReceived);
+import {PermissionsAndroid} from 'react-native';
+PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
 
 const Stack = createStackNavigator();
 

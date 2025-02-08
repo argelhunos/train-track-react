@@ -9,6 +9,8 @@ import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
+import firestore from '@react-native-firebase/firestore'
+import * as Application from 'expo-application';
 import messaging from '@react-native-firebase/messaging';
 
 const Stack = createStackNavigator();
@@ -98,20 +100,48 @@ const addNotification = async (line, stop, time) => {
 const deleteNotification = async (id) => {
     try {
         const db = await SQLite.openDatabaseAsync("notifications");
+        const notificationToDelete = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
         await db.runAsync('DELETE FROM notifications WHERE id = ?', id);
+        await deleteNotificationInFirebase(notificationToDelete.line, notificationToDelete.stop, notificationToDelete.time);
     } catch (error) {
         console.log(error);
     }
 }
 
-async function onAppBootstrap() {
-    // Register the device with FCM
-    await messaging().registerDeviceForRemoteMessages();
-  
-    // Get the token
-    const token = await messaging().getToken();
-  
-    console.log('FCM Token:', token);
+const storeNotificationInFirestore = async (line, stop, time) => {
+    const docRef = firestore().collection('users').doc(Application.getAndroidId());
+
+    firestore()
+        .collection('notifications')
+        .add({
+            docRef: docRef,
+            isActive: true,
+            station: stop,
+            line: line,
+            time: time
+        })
+        .then(() => {
+            console.log("notification stored in firestore")
+        })
+        .catch((error) => console.log("error storing notification", error));
+}
+
+const deleteNotificationInFirebase = async (line, stop, time) => {
+    const docRef = firestore().collection('users').doc(Application.getAndroidId());
+
+    const notificationsToDelete = 
+        firestore()
+            .collection("notifications")
+                .where('docRef', '==', docRef)
+                .where('station', '==', stop)
+                .where('line', '==', line)
+                .where('time', '==', time)
+                .get();
+
+    (await notificationsToDelete).forEach((queryDocumentSnapshot) => {
+        queryDocumentSnapshot.ref.delete()
+            .catch((error) => console.log("error deleting notification!!"));
+    });
 }
 
 function Notifications({ route }) {
@@ -132,7 +162,6 @@ function Notifications({ route }) {
     }
 
     useEffect(() => {
-        onAppBootstrap();
         initDB()
             .then(data => {
                 return fetchNotifications();
@@ -146,6 +175,8 @@ function Notifications({ route }) {
     useEffect(() => {
         console.log(route.params);
         if (route.params?.line && route.params?.stop && route.params?.time) {
+            storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time)
+                .catch((error) => console.log("an error occured when storing in firebase."));
             addNotification(route.params.line, route.params.stop, route.params.time)
                 .then(data => {
                     saveNotificationToTrigger(route.params.time, data.lastInsertRowId);
