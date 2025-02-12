@@ -11,7 +11,21 @@ import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import { useEffect } from 'react';
 import * as Application from 'expo-application';
-import firestore from '@react-native-firebase/firestore';
+// import firestore from '@react-native-firebase/firestore';
+import { doc, setDoc, getFirestore } from '@react-native-firebase/firestore'
+
+const storeFCMToken = async (token) => {
+  try {
+    const db = getFirestore();
+    const docRef = doc(db, 'users', Application.getAndroidId());
+    await setDoc(docRef, {
+      fcmToken: token
+    });
+    console.log("stored token successfully.")
+  } catch (error) {
+    console.log("error when storing token: ", error)
+  }
+}
 
 export default function App() {
   const Tab = createBottomTabNavigator();
@@ -20,18 +34,9 @@ export default function App() {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
     });
-
+  
     messaging().getToken().then(token => {
-      console.log(token);
-      firestore()
-        .collection('users')
-        .doc(Application.getAndroidId())
-        .set({
-          fcmToken: token,
-        })
-        .then(() => {
-          console.log("FCM token saved to Firestore");
-        });
+      storeFCMToken(token);
     });
 
     const userId = Application.getAndroidId();

@@ -5,6 +5,8 @@ import Stop from './Stop';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as SQLite from 'expo-sqlite';
+import { getFirestore, query, where, getDocs, updateDoc, doc, collection } from '@react-native-firebase/firestore';
+import * as Application from 'expo-application';
 
 if (
     Platform.OS === 'android' &&
@@ -13,15 +15,41 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const toggleNotificationActive = async (id) => {
+const toggleNotificationActive = async (line, stop, time) => {
     try {
         const db = await SQLite.openDatabaseAsync("notifications");
-        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE id = ?;`, id);
+        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE line = ? AND stop = ? AND time = ?`, [line, stop, time]);
         console.log("Notification toggled");
         const allRows = await db.getAllAsync('SELECT * FROM notifications');
         console.log(allRows);
     } catch (error) {
         console.log(error);
+    }
+}
+
+const toggleNotificationInFirebase = async (line, stop, time) => {
+    try {
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", Application.getAndroidId());
+        const q = query(
+            collection(db, "notifications"),
+            where('docRef', '==', userDocRef),
+            where('station', '==', stop),
+            where('line', '==', line),
+            where('time', '==', time)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(notification => {
+            const notificationData = notification.data();
+            updateDoc(doc(db, 'notifications', notification.id), {
+                isActive: !notificationData.isActive
+            });
+            console.log("successfully toggled notification to ", !notificationData.isActive);
+        })
+    } catch (error) {
+        console.log("error occurred saving notification", error);
     }
 }
 
@@ -34,10 +62,13 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
         setExpanded(!expanded);
     }
 
-    const onTogglePress = (id) => {
-        toggleNotificationActive(id)
-            .then(() => { setNotificationActive(!notificationActive) })
-            .catch((error) => console.log(error));
+    const onTogglePress = (line, stop, time) => {
+        toggleNotificationInFirebase(line, stop, time)
+            .then(() => {
+                setNotificationActive(!notificationActive);
+                toggleNotificationActive(line, stop, time);
+            })
+            .catch((error) => console.log(error))
     }
 
     return (
@@ -69,7 +100,7 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
                             : <MaterialIcons name="keyboard-arrow-down" size={24} color="white" 
                         />}
                     </Pressable>
-                    <Switch value={notificationActive} onValueChange={() => onTogglePress(id)}/>
+                    <Switch value={notificationActive} onValueChange={() => onTogglePress(line, station, time)}/>
                 </View>
             </View>
             {expanded && 

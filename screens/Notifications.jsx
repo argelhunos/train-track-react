@@ -9,7 +9,7 @@ import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
-import firestore from '@react-native-firebase/firestore'
+import { doc, addDoc, getFirestore, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
 import messaging from '@react-native-firebase/messaging';
 
@@ -21,6 +21,8 @@ if (
 ) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
+
+//#region TODO: move to new file
 
 const initDB = async () => {
     try {
@@ -109,40 +111,46 @@ const deleteNotification = async (id) => {
 }
 
 const storeNotificationInFirestore = async (line, stop, time) => {
-    const docRef = firestore().collection('users').doc(Application.getAndroidId());
-
-    firestore()
-        .collection('notifications')
-        .add({
-            docRef: docRef,
+    try {
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", Application.getAndroidId());
+        await addDoc(collection(db, "notifications"), {
+            docRef: userDocRef,
             isActive: true,
             station: stop,
             line: line,
             time: time
-        })
-        .then(() => {
-            console.log("notification stored in firestore")
-        })
-        .catch((error) => console.log("error storing notification", error));
+        });
+        console.log("notification stored in firebase successfully");
+    } catch (error) {
+        console.log("error storing notification in firebase", error)
+    }
 }
 
 const deleteNotificationInFirebase = async (line, stop, time) => {
-    const docRef = firestore().collection('users').doc(Application.getAndroidId());
+    try {
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", Application.getAndroidId());
+        const q = query(
+            collection(db, "notifications"),
+            where('docRef', '==', userDocRef),
+            where('station', '==', stop),
+            where('line', '==', line),
+            where('time', '==', time)
+        );
 
-    const notificationsToDelete = 
-        firestore()
-            .collection("notifications")
-                .where('docRef', '==', docRef)
-                .where('station', '==', stop)
-                .where('line', '==', line)
-                .where('time', '==', time)
-                .get();
+        const querySnapshot = await getDocs(q);
 
-    (await notificationsToDelete).forEach((queryDocumentSnapshot) => {
-        queryDocumentSnapshot.ref.delete()
-            .catch((error) => console.log("error deleting notification!!"));
-    });
+        querySnapshot.forEach(notification => {
+            deleteDoc(doc(db, "notifications", notification.id));
+            console.log("successfully deleted notif", notification.id);
+        });
+    } catch (error) {
+        console.log("error deleting notification in firebase", error)        
+    }
 }
+
+//#endregion
 
 function Notifications({ route }) {
     const [isLoading, setIsLoading] = useState(true);
