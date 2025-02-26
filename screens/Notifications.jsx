@@ -9,9 +9,10 @@ import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
-import { doc, addDoc, getFirestore, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
+import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
 import messaging from '@react-native-firebase/messaging';
+import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
 
 const Stack = createStackNavigator();
 
@@ -114,10 +115,11 @@ const storeNotificationInFirestore = async (line, stop, time) => {
     try {
         const db = getFirestore();
         const userDocRef = doc(db, "users", Application.getAndroidId());
+        const stopCode = stopToCodeMap.get(stop);
         await addDoc(collection(db, "notifications"), {
             docRef: userDocRef,
             isActive: true,
-            station: stop,
+            station: stopCode,
             line: line,
             time: time
         });
@@ -142,7 +144,9 @@ const deleteNotificationInFirebase = async (line, stop, time) => {
         const querySnapshot = await getDocs(q);
 
         querySnapshot.forEach(notification => {
-            deleteDoc(doc(db, "notifications", notification.id));
+            // old namespace approach (doing the doc function is redundant)
+            // deleteDoc(doc(db, "notifications", notification.id));
+            deleteDoc(notification.ref);
             console.log("successfully deleted notif", notification.id);
         });
     } catch (error) {

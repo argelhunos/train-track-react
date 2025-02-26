@@ -11,6 +11,75 @@ export const trainLineSelections = [
 ]
 
 export let stopMap = new Map();
+export let stopToCodeMap = new Map();
+
+stopToCodeMap.set("Downsview Park GO", "DW");
+stopToCodeMap.set("Rutherford GO", "RU");
+stopToCodeMap.set("Maple GO", "MP");
+stopToCodeMap.set("King City GO", "KC");
+stopToCodeMap.set("Aurora GO", "AU");
+stopToCodeMap.set("Newmarket GO", "NE");
+stopToCodeMap.set("East Gwillimbury GO", "EA");
+stopToCodeMap.set("Bradford GO", "BD");
+stopToCodeMap.set("Barrie South GO", "BA");
+stopToCodeMap.set("Allandale Waterfront GO", "AD");
+stopToCodeMap.set("Bloor GO", "BL");
+stopToCodeMap.set("Weston GO", "WE");
+stopToCodeMap.set("Etobicoke North GO", "ET");
+stopToCodeMap.set("Malton GO", "MA");
+stopToCodeMap.set("Bramalea GO", "BE");
+stopToCodeMap.set("Brampton Innovation District GO", "BR");
+stopToCodeMap.set("Mount Pleasant GO", "MO");
+stopToCodeMap.set("Georgetown GO", "GE");
+stopToCodeMap.set("Acton GO", "AC");
+stopToCodeMap.set("Guelph Central GO", "GL");
+stopToCodeMap.set("Kitchener GO", "KI");
+stopToCodeMap.set("Danforth GO", "DA");
+stopToCodeMap.set("Scarborough GO", "SC");
+stopToCodeMap.set("Eglinton GO", "EG");
+stopToCodeMap.set("Guildwood GO", "GU");
+stopToCodeMap.set("Rouge Hill GO", "RO");
+stopToCodeMap.set("Pickering GO", "PIN");
+stopToCodeMap.set("Ajax GO", "AJ");
+stopToCodeMap.set("Whitby GO", "WH");
+stopToCodeMap.set("Durham College Oshawa GO", "OS");
+stopToCodeMap.set("Exhibition GO", "EX");
+stopToCodeMap.set("Mimico GO", "MI");
+stopToCodeMap.set("Long Branch GO", "LO");
+stopToCodeMap.set("Port Credit GO", "PO");
+stopToCodeMap.set("Clarkson GO", "CL");
+stopToCodeMap.set("Oakville GO", "OA");
+stopToCodeMap.set("Bronte GO", "BO");
+stopToCodeMap.set("Appleby GO", "AP");
+stopToCodeMap.set("Burlington GO", "BU");
+stopToCodeMap.set("Aldershot GO", "AL");
+stopToCodeMap.set("Hamilton GO Centre", "HA");
+stopToCodeMap.set("West Harbour GO", "WR");
+stopToCodeMap.set("St. Catharines GO (VIA Station)", "SCTH");
+stopToCodeMap.set("Niagara Falls GO (VIA Station)", "NI");
+stopToCodeMap.set("Kipling GO", "KP");
+stopToCodeMap.set("Dixie GO", "DI");
+stopToCodeMap.set("Cooksville GO", "CO");
+stopToCodeMap.set("Erindale GO", "ER");
+stopToCodeMap.set("Streetsville GO", "SR");
+stopToCodeMap.set("Meadowvale GO", "ME");
+stopToCodeMap.set("Lisgar GO", "LS");
+stopToCodeMap.set("Milton GO", "ML");
+stopToCodeMap.set("Oriole GO", "OR");
+stopToCodeMap.set("Old Cummer GO", "OL");
+stopToCodeMap.set("Langstaff GO", "LA");
+stopToCodeMap.set("Richmond Hill GO", "RI");
+stopToCodeMap.set("Gormley GO", "GO");
+stopToCodeMap.set("Bloomington GO", "BM");
+stopToCodeMap.set("Kennedy GO", "KE");
+stopToCodeMap.set("Agincourt GO", "AG");
+stopToCodeMap.set("Milliken GO", "MK");
+stopToCodeMap.set("Unionville GO", "UI");
+stopToCodeMap.set("Centennial GO", "CE");
+stopToCodeMap.set("Markham GO", "MR");
+stopToCodeMap.set("Mount Joy GO", "MJ");
+stopToCodeMap.set("Stouffville GO", "ST");
+stopToCodeMap.set("Old Elm GO", "LI");
 
 stopMap.set('Barrie', [
     {name: "Downsview Park GO", code: "DW"},
@@ -136,4 +205,8 @@ export const getStopCode = async () => {
         console.log(error);
         return "";
     }
+}
+
+export const convertStopToCode = (stop) => {
+    return stopToCodeMap.get(stop);
 }
