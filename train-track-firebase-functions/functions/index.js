@@ -99,8 +99,8 @@ exports.fireNotifications = onRequest(async (req, res) => {
 
         for (const doc of snapshot.docs) {
             const notification = doc.data();
-            const fcmToken = notification.fcmToken;
-            console.log(fcmToken);
+            const userDoc = await notification.docRef.get();
+            const fcmToken = userDoc.data().fcmToken;
             const nextService = await getNextService(notification.station, notification.line);
             console.log(nextService[0]);
             const message = {
