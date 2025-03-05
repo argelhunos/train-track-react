@@ -103,9 +103,14 @@ exports.fireNotifications = onRequest(async (req, res) => {
             const fcmToken = userDoc.data().fcmToken;
             const nextService = await getNextService(notification.station, notification.line);
             console.log(nextService[0]);
+
+            // format data from api response
+            const body = `Heading towards ${nextService[0].DirectionName} departs at ${nextService[0].DisplayedDepartureTime} on ${nextService[0].DisplayedPlatform}.`;
+
             const message = {
                 data: {
-                    test: JSON.stringify(nextService[0]),
+                    title: `Next ${nextService[0].LineName} Departure`,
+                    body: body
                 },
                 token: fcmToken
             }
@@ -118,26 +123,6 @@ exports.fireNotifications = onRequest(async (req, res) => {
                     console.log('Error sending message:', error);
                 })
         }
-        // snapshot.forEach(async (doc) => {
-        //     const notification = doc.data();
-        //     const fcmToken = await notification.docRef.get();
-        //     const nextService = await getNextService();
-
-        //     const message = {
-        //         data: {
-        //             test: nextService[0],
-        //             token: fcmToken
-        //         }
-        //     }
-
-        //     getMessaging().send(message)
-        //         .then((response) => {
-        //             console.log('Successfully sent message:', response);
-        //         })
-        //         .catch((error) => {
-        //             console.log('Error sending message:', error);
-        //         })
-        // });
         
         res.json({ result: 'completed sending notifications' });
     } catch (error) {

@@ -111,6 +111,20 @@ const deleteNotification = async (id) => {
     }
 }
 
+const editNotification = async (id, newLine, newStop, newTime) => {
+    try {
+        const db = await SQLite.openDatabaseAsync("notifications");
+        const notificationToEdit = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
+        await db.runAsync('UPDATE notifications SET line = ?, stop = ?, time = ? WHERE id = ?', newLine, newStop, newTime, id);
+        await editNotificationInFirebase(
+            { line: notificationToEdit.line, stop: notificationToEdit.stop, time: notificationToEdit.time }, // old data
+            { line: newLine, stop: newStop, time: newTime } // new data
+        )
+    } catch (error) {
+        console.log("there was an error editing the notification: ", error);
+    }
+}
+
 const storeNotificationInFirestore = async (line, stop, time) => {
     try {
         const db = getFirestore();
@@ -149,8 +163,48 @@ const deleteNotificationInFirebase = async (line, stop, time) => {
             deleteDoc(notification.ref);
             console.log("successfully deleted notif", notification.id);
         });
+
+        if (querySnapshot.empty) {
+            console.log("no notifications found to delete");
+        }
     } catch (error) {
-        console.log("error deleting notification in firebase", error)        
+        console.log("error deleting notification in firebase", error);
+    }
+}
+
+const editNotificationInFirebase = async (oldData, newData) => {
+    try {
+        console.log("editing notification in firebase");
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", Application.getAndroidId());
+
+        // oops my bad. query stores the stop using the code, make sure to convert name to code
+        const oldStopCode = convertStopToCode(oldData.stop);
+        const newStopCode = convertStopToCode(newData.stop);
+
+        const q = query(
+            collection(db, "notifications"),
+            where('docRef', '==', userDocRef),
+            where('station', '==', oldStopCode),
+            where('line', '==', oldData.line),
+            where('time', '==', oldData.time)
+        );
+
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach(notification => {
+            updateDoc(notification.ref, {
+                line: newData.line,
+                station: newStopCode,
+                time: newData.time
+            })
+        });
+
+        if (querySnapshot.empty) {
+            console.log("no notifications found to edit");
+        }
+    } catch (error) {
+        console.log("error editing notification in firebase", error);
     }
 }
 
@@ -186,7 +240,7 @@ function Notifications({ route }) {
 
     useEffect(() => {
         console.log(route.params);
-        if (route.params?.line && route.params?.stop && route.params?.time) {
+        if (route.params?.line && route.params?.stop && route.params?.time && route.params?.isEditMode != true) {
             storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time)
                 .catch((error) => console.log("an error occured when storing in firebase."));
             addNotification(route.params.line, route.params.stop, route.params.time)
@@ -196,6 +250,11 @@ function Notifications({ route }) {
                 })
                 .then(data => setNotifications(data))
                 .catch(error => console.log("something went wrong: ", error));
+        } else if (route.params?.isEditMode) {
+            editNotification(route.params.id, route.params.line, route.params.stop, route.params.time)
+                .then(data => fetchNotifications())
+                .then(data => setNotifications(data))
+                .catch(error => console.log("error editing notification: ", error));
         }
     }, [route.params?.line, route.params?.stop, route.params?.time]);
 

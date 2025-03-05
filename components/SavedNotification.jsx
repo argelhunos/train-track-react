@@ -7,6 +7,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as SQLite from 'expo-sqlite';
 import { getFirestore, query, where, getDocs, updateDoc, doc, collection } from '@react-native-firebase/firestore';
 import * as Application from 'expo-application';
+import { useNavigation } from '@react-navigation/native';
+import { convertStopToCode } from '../data/dropdownOptions';
 
 if (
     Platform.OS === 'android' &&
@@ -15,6 +17,7 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+//TODO: clean up firebase storing implementation to store the station name and stopcode, reducing the need of converting the name each time
 const toggleNotificationActive = async (line, stop, time) => {
     try {
         const db = await SQLite.openDatabaseAsync("notifications");
@@ -31,10 +34,11 @@ const toggleNotificationInFirebase = async (line, stop, time) => {
     try {
         const db = getFirestore();
         const userDocRef = doc(db, "users", Application.getAndroidId());
+        const stopCode = convertStopToCode(stop);
         const q = query(
             collection(db, "notifications"),
             where('docRef', '==', userDocRef),
-            where('station', '==', stop),
+            where('station', '==', stopCode),
             where('line', '==', line),
             where('time', '==', time)
         );
@@ -48,6 +52,10 @@ const toggleNotificationInFirebase = async (line, stop, time) => {
             });
             console.log("successfully toggled notification to ", !notificationData.isActive);
         })
+
+        if (querySnapshot.empty) {
+            console.log("No notifications found to toggle");
+        }
     } catch (error) {
         console.log("error occurred saving notification", error);
     }
@@ -56,6 +64,7 @@ const toggleNotificationInFirebase = async (line, stop, time) => {
 function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
     const [expanded, setExpanded] = useState(false);
     const [notificationActive, setNotificationActive] = useState(isActive ? true : false);
+    const navigation = useNavigation();
 
     const onCaretPress = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -105,10 +114,23 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
             </View>
             {expanded && 
                 <View style={styles.expandedOptionsList}>
-                    <TouchableNativeFeedback>
+                    <TouchableNativeFeedback
+                        onPress={() => 
+                            navigation
+                                .navigate('Notifications Modal', 
+                                    {
+                                        editMode: true,
+                                        line: line,
+                                        stop: station,
+                                        time: time,
+                                        id: id
+                                    }
+                                )
+                        }
+                    >
                         <View style={styles.expandedOptions}>
                             <MaterialIcons name="edit" size={24} color="black" />
-                            <Text>Edit Line and Station</Text>
+                            <Text>Edit Notification</Text>
                         </View>
                     </TouchableNativeFeedback>
                     <TouchableNativeFeedback

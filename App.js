@@ -9,8 +9,10 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import UnionDepartureBoard from './screens/UnionDepartureBoard';
 import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import { useEffect } from 'react';
 import * as Application from 'expo-application';
+
 // import firestore from '@react-native-firebase/firestore';
 import { doc, setDoc, getFirestore } from '@react-native-firebase/firestore'
 
@@ -27,22 +29,37 @@ const storeFCMToken = async (token) => {
   }
 }
 
+async function onMessageReceived(message) {
+  const data = message.data;
+
+  const channelId = await notifee.createChannel({
+    id: 'train-notifications-1',
+    name: 'Default Channel',
+    importance: AndroidImportance.HIGH
+  });
+
+  notifee.displayNotification({
+    title: data.title,
+    body: data.body,
+    android: {
+      channelId: channelId
+    }
+  })
+}
+
+messaging().onMessage(onMessageReceived);
+messaging().setBackgroundMessageHandler(onMessageReceived);
+
 export default function App() {
   const Tab = createBottomTabNavigator();
 
-  useEffect(() => {
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
-      Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
-    });
-  
+  useEffect(() => {  
     messaging().getToken().then(token => {
       storeFCMToken(token);
     });
 
     const userId = Application.getAndroidId();
     console.log("Unique device ID: " + userId);
-
-    return unsubscribe;
   }, []);
 
   return (

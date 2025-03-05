@@ -8,14 +8,22 @@ import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getStopsWithLine } from "../data/dropdownOptions";
 
-function NotificationsModal() {
+function NotificationsModal({route}) {
+    const { editMode = false, id, line = '', stop = '', time = '00:00'} = route.params || {}; // or empty object if no params to handle undefined
     const insets = useSafeAreaInsets();
-    const [selectedLine, setSelectedLine] = useState(null);
-    const [selectedStop, setSelectedStop] = useState(null);
+    const [selectedLine, setSelectedLine] = useState(line);
+    const [selectedStop, setSelectedStop] = useState(stop);
     const [stops, setStops] = useState([]);
     const navigation = useNavigation();
     let defaultDate = new Date(0);
-    defaultDate.setHours(0,0,0,0);
+
+    if (editMode) {
+        defaultDate.setHours(time.split(":")[0]);
+        defaultDate.setMinutes(time.split(":")[1]);
+    } else {
+        defaultDate.setHours(0,0,0,0);
+    }
+
     const [date, setDate] = useState(defaultDate);
     const [mode, setMode] = useState('date');
     const [show, setShow] = useState(false);
@@ -34,12 +42,26 @@ function NotificationsModal() {
 
     const onSubmit = () => {
         console.log(selectedLine, selectedStop, date);
+        
+        // only navigate if all fields are filled on notification creation
         if (selectedLine && selectedStop && date !== defaultDate) {
             console.log(selectedLine, selectedStop, date);
             navigation.navigate("Notifications", {
                 line: selectedLine,
                 stop: selectedStop,
-                time: formatDate(date)
+                time: formatDate(date),
+                isEditMode: editMode,
+                id: id
+            });
+        } else if (editMode) {
+            // double check if this is needed
+            console.log(selectedLine, selectedStop, date);
+            navigation.navigate("Notifications", {
+                line: selectedLine,
+                stop: selectedStop,
+                time: formatDate(date),
+                isEditMode: editMode,
+                id: id
             });
         }
     };
@@ -81,18 +103,21 @@ function NotificationsModal() {
                 }}
             >
                 <View style={styles.modal}>
+                    <Text style={styles.modalTitle}>Set Notification</Text>
                     <Text style={styles.sectionTitle}>Line</Text>
                     <SelectList
                         data={trainLineSelections}
                         setSelected={item => setSelectedLine(item)}
                         onSelect={() => onLineChange()}
                         save="value"
+                        defaultOption={selectedLine}
                     />
                     <Text style={styles.sectionTitle}>Station</Text>
                     <SelectList 
                         data={stops}
                         setSelected={item => setSelectedStop(item)}
                         save="value"
+                        defaultOption={selectedStop}
                     />
                     <Text style={styles.sectionTitle}>Set Time</Text>
                     <View style={styles.timeSetter}>
@@ -152,6 +177,10 @@ const styles = StyleSheet.create({
     },
     time: {
         fontSize: 40
+    },
+    modalTitle: {
+        fontWeight: '500',
+        fontSize: 25
     },
     sectionTitle: {
         fontWeight: '500',
