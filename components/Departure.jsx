@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimat
 import { useEffect, useState } from 'react';
 import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
 import Stop from './Stop';
-import { lineColour, unionLineColour } from '../data/titleAttributes';
+import { unionLineColour } from '../data/titleAttributes';
 
 if (
     Platform.OS === 'android' &&
@@ -52,6 +52,7 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 handleTouch();
             }}
+            
         >
             <View 
                 style={

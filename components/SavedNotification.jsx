@@ -1,7 +1,5 @@
 import { StyleSheet, Text, View, Platform, LayoutAnimation, UIManager, Pressable, Switch, TouchableNativeFeedback } from 'react-native';
-import { useEffect, useState } from 'react';
-import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
-import Stop from './Stop';
+import { useState } from 'react';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as SQLite from 'expo-sqlite';
@@ -109,7 +107,12 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
                             : <MaterialIcons name="keyboard-arrow-down" size={24} color="white" 
                         />}
                     </Pressable>
-                    <Switch value={notificationActive} onValueChange={() => onTogglePress(line, station, time)}/>
+                    <Switch 
+                        value={notificationActive} 
+                        onValueChange={() => onTogglePress(line, station, time)}
+                        trackColor={{ false: "#767577", true: "#B2B8AD" }}
+                        thumbColor={notificationActive ? "#4E8D61" : "#f4f3f4"}
+                    />
                 </View>
             </View>
             {expanded && 

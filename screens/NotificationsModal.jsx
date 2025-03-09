@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
         fontSize: 15
     },
     editTimeButton: {
-        backgroundColor: '#7EB4E4',
+        backgroundColor: '#7cab84',
         padding: 10,
         borderRadius: 50
     },

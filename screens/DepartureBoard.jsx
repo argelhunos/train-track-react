@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import LineName from '../components/LineName.jsx';
 import DepartureCard from '../components/Departure.jsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { getItem } from '../utils/AsyncStorage.js';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes.js';
 import { useFocusEffect } from '@react-navigation/native';

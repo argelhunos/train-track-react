@@ -1,13 +1,9 @@
-import {View, Text, StyleSheet, Image, TouchableNativeFeedback, Platform, Pressable } from 'react-native';
+import {View, Text, StyleSheet, TouchableNativeFeedback, Platform, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SelectList } from 'react-native-dropdown-select-list';
 import { useEffect, useRef, useState } from 'react';
-import { trainLineSelections, getStops } from '../data/dropdownOptions';
-import { getItem, removeItem, setItem } from '../utils/AsyncStorage';
-import { onDisplayNotification } from '../services/notificationsService';
+import { getItem, setItem } from '../utils/AsyncStorage';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 import LineName from '../components/LineName';
-import SettingsItem from '../components/SettingsItem';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';

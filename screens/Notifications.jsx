@@ -8,10 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
-import notifee, { RepeatFrequency, TriggerType } from '@notifee/react-native';
 import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
-import messaging from '@react-native-firebase/messaging';
 import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
 
 const Stack = createStackNavigator();
@@ -51,40 +49,6 @@ const fetchNotifications = async () => {
     } catch (error) {
         console.log(error);
     }
-}
-
-const saveNotificationToTrigger = async (time, id) => {
-    // convert time given to time obj
-    const timeObj = new Date(Date.now());
-    timeObj.setHours(time.split(":")[0]);
-    timeObj.setMinutes(time.split(":")[1]);
-
-
-    // create a channel for Android
-    const channelId = await notifee.createChannel({
-        id: `${id}`,
-        name: 'Default Channel',
-    });
-
-    // create time based trigger
-    const trigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: timeObj.getTime(),
-        repeatFrequency: RepeatFrequency.DAILY,
-    };
-
-    console.log("saving notification to trigger");
-    // create notification with trigger!
-    await notifee.createTriggerNotification(
-        {
-          title: 'Meeting with Jane',
-          body: 'Today at 11:20am',
-          android: {
-            channelId: channelId,
-          },
-        },
-        trigger,
-    );
 }
 
 const dropTable = async () => {
@@ -267,7 +231,6 @@ function Notifications({ route }) {
                 .catch((error) => console.log("an error occured when storing in firebase."));
             addNotification(route.params.line, route.params.stop, route.params.time)
                 .then(data => {
-                    saveNotificationToTrigger(route.params.time, data.lastInsertRowId);
                     return fetchNotifications()
                 })
                 .then(data => setNotifications(data))
@@ -336,7 +299,7 @@ const styles = StyleSheet.create({
         gap: 15,
     },
     addNotifButton: {
-        backgroundColor: '#7EB4E4',
+        backgroundColor: '#7cab84',
         padding: 10,
         alignItems: 'center',
         width: 75,
