@@ -7,7 +7,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
 // firebase admin sdk for firestore
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
 // firebase cloud messaging
 const { getMessaging } = require("firebase-admin/messaging");
@@ -84,16 +84,37 @@ exports.fireNotifications = onRequest(async (req, res) => {
         const db = getFirestore();
         const messaging = getMessaging();
 
-        // get all of the notifications that are active
+        const currentDate = new Date();
+        const currentTime = currentDate.getUTCHours() * 60 + currentDate.getUTCMinutes(); // minutes since midnight
+        const oneMinuteAgo = currentTime - 1;
+
+        currentDate.setUTCHours(0, 0, 0, 0);
+
+        const dateOnly = currentDate;
+
+        console.log("current time: ", currentTime);
+        console.log("one minute ago: ", oneMinuteAgo);
+
+        // get all of the notifications that are active, have a time within the last minute, and have not been sent out today already
         const snapshot = await db.collection("notifications")
             .where("isActive", "==", true)
+            .where("minutesSinceMidnight", ">=", oneMinuteAgo)
+            .where("minutesSinceMidnight", "<=", currentTime)
+            .where("lastSent", "!=", Timestamp.fromDate(dateOnly))
             .get();
+        
+        const snapshot2 = await db.collection("notifications")
+            .where("minutesSinceMidnight", ">=", oneMinuteAgo)
+            .get();
+
+        if (snapshot2.empty) {
+            return res.json({ result: "No active notifications found aaa"})
+        }
 
         if (snapshot.empty) {
             return res.json({ result: "No active notifications found"})
         }
-
-
+        
         // NOTE TO SELF: forEach does not respect async functions.
         // getting notification data for each, and building the payload to send to correct token
 
@@ -122,6 +143,13 @@ exports.fireNotifications = onRequest(async (req, res) => {
                 .catch((error) => {
                     console.log('Error sending message:', error);
                 })
+                .finally(() => {
+                    // update the last sent time to today
+                    db.collection("notifications").doc(doc.id).update({
+                        lastSent: Timestamp.fromDate(dateOnly)
+                    });
+                });
+
         }
         
         res.json({ result: 'completed sending notifications' });

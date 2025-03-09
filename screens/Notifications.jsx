@@ -23,7 +23,14 @@ if (
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-//#region TODO: move to new file
+//#region TODO: move to new file YOU REALLY NEED TO MOVE EVERYTHING
+const convertTimeToUTCMinutesSinceMidnight = (time) => {
+    const [hours, minutes] = time.split(":");
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+
+    return date.getUTCHours() * 60 + date.getUTCMinutes();
+}
 
 const initDB = async () => {
     try {
@@ -125,17 +132,29 @@ const editNotification = async (id, newLine, newStop, newTime) => {
     }
 }
 
+// note: time gets converted to minutes since midnight to store in the database for better querying in backend
+// note 2: lastSent starts off as null to represent that it has not been sent ever
 const storeNotificationInFirestore = async (line, stop, time) => {
     try {
         const db = getFirestore();
         const userDocRef = doc(db, "users", Application.getAndroidId());
         const stopCode = stopToCodeMap.get(stop);
+        const minutesSinceMidnight = convertTimeToUTCMinutesSinceMidnight(time);
+
+
+        // old date to represent that it has not been sent yet
+        const defaultDate = new Date();
+        defaultDate.setUTCHours(0, 0, 0, 0);
+        defaultDate.setUTCFullYear(1970, 0, 1);
+
         await addDoc(collection(db, "notifications"), {
             docRef: userDocRef,
             isActive: true,
             station: stopCode,
             line: line,
-            time: time
+            time: time,
+            minutesSinceMidnight: minutesSinceMidnight,
+            lastSent: defaultDate,
         });
         console.log("notification stored in firebase successfully");
     } catch (error) {
@@ -147,10 +166,11 @@ const deleteNotificationInFirebase = async (line, stop, time) => {
     try {
         const db = getFirestore();
         const userDocRef = doc(db, "users", Application.getAndroidId());
+        const stopCode = stopToCodeMap.get(stop);
         const q = query(
             collection(db, "notifications"),
             where('docRef', '==', userDocRef),
-            where('station', '==', stop),
+            where('station', '==', stopCode),
             where('line', '==', line),
             where('time', '==', time)
         );
@@ -177,6 +197,7 @@ const editNotificationInFirebase = async (oldData, newData) => {
         console.log("editing notification in firebase");
         const db = getFirestore();
         const userDocRef = doc(db, "users", Application.getAndroidId());
+        const minutesSinceMidnight = convertTimeToUTCMinutesSinceMidnight(newData.time);
 
         // oops my bad. query stores the stop using the code, make sure to convert name to code
         const oldStopCode = convertStopToCode(oldData.stop);
@@ -196,7 +217,8 @@ const editNotificationInFirebase = async (oldData, newData) => {
             updateDoc(notification.ref, {
                 line: newData.line,
                 station: newStopCode,
-                time: newData.time
+                time: newData.time,
+                minutesSinceMidnight: minutesSinceMidnight
             })
         });
 
