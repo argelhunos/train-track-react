@@ -1,13 +1,13 @@
 import './gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import DepartureBoard from './screens/DepartureBoard';
 import SettingsStack from './screens/Settings';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './gesture-handler';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import UnionDepartureBoard from './screens/UnionDepartureBoard';
-import { Alert } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { useEffect } from 'react';
@@ -51,7 +51,9 @@ messaging().onMessage(onMessageReceived);
 messaging().setBackgroundMessageHandler(onMessageReceived);
 
 export default function App() {
-  const Tab = createBottomTabNavigator();
+  // const Tab = createBottomTabNavigator();
+  const Tab = createMaterialTopTabNavigator();
+
 
   useEffect(() => {  
     messaging().getToken().then(token => {
@@ -66,21 +68,25 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
           <Tab.Navigator
+            tabBarPosition='bottom'
             screenOptions={({ route }) => ({
-              headerShown: false, 
-              tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
-                if (route.name === "Departure Board") {
-                  iconName = "departure-board";
-                } else if (route.name === "Settings") {
-                  iconName = "settings"
-                } else if (route.name === "Union Departures") {
-                  iconName = "commit"
-                }
-
-                // return icon woo
-                return <MaterialIcons name={iconName} size={size} color={color}/>
+              headerShown: false,
+              tabBarIndicatorStyle: {
+                backgroundColor: '#3A8446'
               },
+              // tabBarIcon: ({ focused, color, size }) => {
+              //   let iconName;
+              //   if (route.name === "Departure Board") {
+              //     iconName = "departure-board";
+              //   } else if (route.name === "Settings") {
+              //     iconName = "settings"
+              //   } else if (route.name === "Union Departures") {
+              //     iconName = "commit"
+              //   }
+
+              //   // return icon woo
+              //   return <MaterialIcons name={iconName} size={size} color={color}/>
+              // },
               tabBarActiveTintColor: '#3A8446',
               tabBarInactiveTintColor: 'gray',
             })}
