@@ -27,6 +27,13 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
 
     const handleTouch = () => {
         setLoadingMoreInfo(true);
+        
+        if (expanded) {
+            setExpanded(!expanded);
+            setLoadingMoreInfo(false);
+            return;
+        }
+
         getMergedTripDetails(tripNumber)
             .then(data => {
                 setTripStops(data);
