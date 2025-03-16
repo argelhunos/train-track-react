@@ -109,6 +109,10 @@ function DepartureBoard({ navigation }) {
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>    
             }
+            contentContainerStyle={{
+              display: 'flex',
+              rowGap: 15
+            }}
           >
             {/* != for XOR */}
             {loading != refreshing ? <ActivityIndicator size="large" /> : 

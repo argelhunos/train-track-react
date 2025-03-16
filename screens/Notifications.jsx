@@ -13,6 +13,7 @@ import * as Application from 'expo-application';
 import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
 
 const Stack = createStackNavigator();
+let dbInstance = null;
 
 if (
     Platform.OS === 'android' &&
@@ -32,7 +33,7 @@ const convertTimeToUTCMinutesSinceMidnight = (time) => {
 
 const initDB = async () => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = getDb();
         await db.execAsync(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, line TEXT, stop TEXT, time TEXT, isActive BOOLEAN);`);
         console.log("DB created");
     } catch (error) {
@@ -40,9 +41,16 @@ const initDB = async () => {
     }
 }
 
+const getDb = async () => {
+    if (!dbInstance) {
+        dbInstance = await SQLite.openDatabaseAsync("notifications");
+    }
+    return dbInstance;
+}
+
 const fetchNotifications = async () => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = await getDb();
         const allRows = await db.getAllAsync('SELECT * FROM notifications');
         console.log(allRows);
         return allRows;   
@@ -53,7 +61,7 @@ const fetchNotifications = async () => {
 
 const dropTable = async () => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = await getDb();
         await db.execAsync(`DROP TABLE notifications`);
     } catch (error) {
         console.log(error);
@@ -62,7 +70,7 @@ const dropTable = async () => {
 
 const addNotification = async (line, stop, time) => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = await getDb();
         const result = await db.runAsync('INSERT INTO notifications (line, stop, time, isActive) VALUES (?, ?, ?, ?)', line, stop, time, 1);
         console.log("added notification: ", result);
         return result;        
@@ -73,7 +81,7 @@ const addNotification = async (line, stop, time) => {
 
 const deleteNotification = async (id) => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = await getDb();
         const notificationToDelete = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
         await db.runAsync('DELETE FROM notifications WHERE id = ?', id);
         await deleteNotificationInFirebase(notificationToDelete.line, notificationToDelete.stop, notificationToDelete.time);
@@ -84,7 +92,7 @@ const deleteNotification = async (id) => {
 
 const editNotification = async (id, newLine, newStop, newTime) => {
     try {
-        const db = await SQLite.openDatabaseAsync("notifications");
+        const db = await getDb();
         const notificationToEdit = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
         await db.runAsync('UPDATE notifications SET line = ?, stop = ?, time = ? WHERE id = ?', newLine, newStop, newTime, id);
         await editNotificationInFirebase(
@@ -264,7 +272,12 @@ function Notifications({ route }) {
                     />
                 </Pressable> 
                 <View style={styles.noNotifsMsg}>
-                    <ScrollView>
+                    <ScrollView
+                        contentContainerStyle={{
+                            display: 'flex',
+                            rowGap: 15
+                            }}
+                    >
                         {isLoading ? <Text>No notifications.</Text> : notifications.map((notification) => {
                             return (
                                 <SavedNotification 

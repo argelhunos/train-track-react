@@ -157,7 +157,6 @@ const styles = StyleSheet.create({
         gap: 10,
         backgroundColor: '#dee4d8',
         minWidth: '80%',
-        marginBottom: '5%',
         padding: '5%',
         borderRadius: 20,
     },

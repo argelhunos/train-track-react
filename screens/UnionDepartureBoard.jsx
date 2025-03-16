@@ -53,7 +53,12 @@ function UnionDepartureBoard({ navigation }) {
             lineColour="#CECECD"
           />
           <Text>{`Last Updated: ${currentTime}`}</Text>
-          <ScrollView>
+          <ScrollView
+            contentContainerStyle={{
+              display: 'flex',
+              rowGap: 15
+            }}
+          >
             {loading ? <ActivityIndicator size="large" /> : 
               tripTimes.length != 0 ?
               tripTimes.map((trip, index) => (
