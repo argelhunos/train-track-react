@@ -1,81 +1,20 @@
-import { StyleSheet, Text, View, Platform, LayoutAnimation, UIManager, Pressable, Switch, TouchableNativeFeedback } from 'react-native';
+import { StyleSheet, Text, View, LayoutAnimation, Pressable, Switch } from 'react-native';
 import { useState } from 'react';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import * as SQLite from 'expo-sqlite';
-import { getFirestore, query, where, getDocs, updateDoc, doc, collection } from '@react-native-firebase/firestore';
-import * as Application from 'expo-application';
 import { useNavigation } from '@react-navigation/native';
-import { convertStopToCode } from '../data/dropdownOptions';
+import { toggleNotification } from '../services/notificationsService';
+import SavedNotificationOptionsMenu from './SavedNotificationOptionsMenu';
 
-if (
-    Platform.OS === 'android' &&
-    UIManager.setLayoutAnimationEnabledExperimental
-) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-//TODO: clean up firebase storing implementation to store the station name and stopcode, reducing the need of converting the name each time
-const toggleNotificationActive = async (line, stop, time) => {
-    try {
-        const db = await SQLite.openDatabaseAsync("notifications");
-        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE line = ? AND stop = ? AND time = ?`, [line, stop, time]);
-        console.log("Notification toggled");
-        const allRows = await db.getAllAsync('SELECT * FROM notifications');
-        console.log(allRows);
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-const toggleNotificationInFirebase = async (line, stop, time) => {
-    try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", Application.getAndroidId());
-        const stopCode = convertStopToCode(stop);
-        const q = query(
-            collection(db, "notifications"),
-            where('docRef', '==', userDocRef),
-            where('station', '==', stopCode),
-            where('line', '==', line),
-            where('time', '==', time)
-        );
-
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach(notification => {
-            const notificationData = notification.data();
-            updateDoc(doc(db, 'notifications', notification.id), {
-                isActive: !notificationData.isActive
-            });
-            console.log("successfully toggled notification to ", !notificationData.isActive);
-        })
-
-        if (querySnapshot.empty) {
-            console.log("No notifications found to toggle");
-        }
-    } catch (error) {
-        console.log("error occurred saving notification", error);
-    }
-}
-
-function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
+function SavedNotification ({notification, deleteMethod}) {
+    const { time, line, stop, isActive } = notification;
     const [expanded, setExpanded] = useState(false);
-    const [notificationActive, setNotificationActive] = useState(isActive ? true : false);
+    const [notificationActive, setNotificationActive] = useState(isActive);
     const navigation = useNavigation();
 
     const onCaretPress = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setExpanded(!expanded);
-    }
-
-    const onTogglePress = (line, stop, time) => {
-        toggleNotificationInFirebase(line, stop, time)
-            .then(() => {
-                setNotificationActive(!notificationActive);
-                toggleNotificationActive(line, stop, time);
-            })
-            .catch((error) => console.log(error))
     }
 
     return (
@@ -93,7 +32,7 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
                             <Text style={styles.lineAbbr}>{lineAbbreviation.get(line)}</Text>
                         </View>
                         <Text>
-                            {line} - {station}
+                            {line} - {stop}
                         </Text>
                     </View>
                 </View>
@@ -109,42 +48,14 @@ function SavedNotification ({time, line, station, isActive, id, deleteMethod}) {
                     </Pressable>
                     <Switch 
                         value={notificationActive} 
-                        onValueChange={() => onTogglePress(line, station, time)}
+                        onValueChange={() => toggleNotification(line, stop, time, setNotificationActive)}
                         trackColor={{ false: "#767577", true: "#B2B8AD" }}
                         thumbColor={notificationActive ? "#4E8D61" : "#f4f3f4"}
                     />
                 </View>
             </View>
             {expanded && 
-                <View style={styles.expandedOptionsList}>
-                    <TouchableNativeFeedback
-                        onPress={() => 
-                            navigation
-                                .navigate('Notifications Modal', 
-                                    {
-                                        editMode: true,
-                                        line: line,
-                                        stop: station,
-                                        time: time,
-                                        id: id
-                                    }
-                                )
-                        }
-                    >
-                        <View style={styles.expandedOptions}>
-                            <MaterialIcons name="edit" size={24} color="black" />
-                            <Text>Edit Notification</Text>
-                        </View>
-                    </TouchableNativeFeedback>
-                    <TouchableNativeFeedback
-                        onPress={() => deleteMethod(id)}
-                    >
-                        <View style={styles.expandedOptions}>
-                            <MaterialIcons name="delete" size={24} color="black" />
-                            <Text>Delete</Text>
-                        </View>
-                    </TouchableNativeFeedback>
-                </View>
+                <SavedNotificationOptionsMenu notification={notification} deleteMethod={deleteMethod}/>
             }
         </View>        
     )
@@ -205,17 +116,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '800'
     },
-    expandedOptionsList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12
-    },
-    expandedOptions: {
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8
-    }
 });
 
 export default SavedNotification;

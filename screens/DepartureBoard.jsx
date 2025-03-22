@@ -18,31 +18,27 @@ function DepartureBoard({ navigation }) {
     const [stop, setStop] = useState("");
     const insets = useSafeAreaInsets();
 
-    const loadDepartures = () => {
-      setLoading(true);
-      getItem('line')
-        .then(data => {
-          setLine(data);
-          return getItem('stop');
-        })
-        .then(data => {
-          setStop(data);
-          return getNextService();
-        })
-        .then(data => {
-          setTripTimes(data);
-          setLoading(false);
-          setRefreshing(false);
-          setCurrentTime(new Date().toTimeString());
-        })
-        .catch((error) => {
-          console.log(error);
-          setLoading(false);
-          setRefreshing(false);
-          setCurrentTime(new Date().toTimeString());
-        })
-    }
+    const loadDepartures = async () => {
+      try {
+        setLoading(true);
+        
+        const currentLine = await getItem('line');
+        setLine(currentLine);
 
+        const currentStop = await getItem('stop');
+        setStop(currentStop);
+
+        const tripTimes = await getNextService();
+        setTripTimes(tripTimes);
+        setRefreshing(false);
+        setCurrentTime(new Date().toTimeString());
+      } catch (error) {
+        console.log("Error occured loading departures: ", error);
+        setLoading(false);
+        setRefreshing(false);
+        setCurrentTime(new Date().toTimeString());
+      }
+    }
     // useFocusEffect instead of useEffect to update during each focus, so it is always using updated user line/stop preferences
     useFocusEffect(
       useCallback(() => {

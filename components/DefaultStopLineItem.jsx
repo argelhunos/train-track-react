@@ -1,15 +1,8 @@
-import { StyleSheet, Text, TouchableNativeFeedback, View, Platform, LayoutAnimation, UIManager, FlatList } from "react-native";
+import { StyleSheet, Text, TouchableNativeFeedback, View, Platform, LayoutAnimation, FlatList } from "react-native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from "react";
 import { lineColour } from "../data/titleAttributes";
 import { useNavigation } from "@react-navigation/native";
-
-if (
-    Platform.OS === 'android' &&
-    UIManager.setLayoutAnimationEnabledExperimental
-) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 function DefaultStopLineItem({lineName, stations}) {
     const [active, setActive] = useState(false);

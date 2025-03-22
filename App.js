@@ -12,6 +12,7 @@ import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { useEffect } from 'react';
 import * as Application from 'expo-application';
+import { Platform, UIManager } from 'react-native';
 
 // import firestore from '@react-native-firebase/firestore';
 import { doc, setDoc, getFirestore } from '@react-native-firebase/firestore'
@@ -49,6 +50,13 @@ async function onMessageReceived(message) {
 
 messaging().onMessage(onMessageReceived);
 messaging().setBackgroundMessageHandler(onMessageReceived);
+
+if (
+    Platform.OS === 'android' &&
+    UIManager.setLayoutAnimationEnabledExperimental
+) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function App() {
   // const Tab = createBottomTabNavigator();
