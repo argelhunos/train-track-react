@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, ActivityIndicator, View, Text, RefreshControl } from 'react-native';
 import { getNextService, getSchedule } from '../services/apiService.js'
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import LineName from '../components/LineName.jsx';
 import DepartureCard from '../components/Departure.jsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,19 +8,22 @@ import { getItem } from '../utils/AsyncStorage.js';
 import { lineAbbreviation, lineColour } from '../data/titleAttributes.js';
 import { useFocusEffect } from '@react-navigation/native';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar.jsx';
+import LoadError from '../components/LoadError.jsx';
 
 function DepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
-    const [currentTime, setCurrentTime] = useState(new Date().toTimeString());
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleDateString("en-CA"));
     const [line, setLine] = useState("");
     const [stop, setStop] = useState("");
+    const [error, setError] = useState(null);
     const insets = useSafeAreaInsets();
 
     const loadDepartures = async () => {
       try {
         setLoading(true);
+        setError(null);
         
         const currentLine = await getItem('line');
         setLine(currentLine);
@@ -30,51 +33,45 @@ function DepartureBoard({ navigation }) {
 
         const tripTimes = await getNextService();
         setTripTimes(tripTimes);
-        setRefreshing(false);
-        setCurrentTime(new Date().toTimeString());
-      } catch (error) {
-        console.log("Error occured loading departures: ", error);
         setLoading(false);
         setRefreshing(false);
-        setCurrentTime(new Date().toTimeString());
+        setCurrentTime(new Date().toLocaleTimeString("en-CA"));
+      } catch (error) {
+        console.log("Error occured loading departures: ", error);
+        setTripTimes([]);
+        setLoading(false);
+        setRefreshing(false);
+        setCurrentTime(new Date().toLocaleDateString("en-CA"));
+        setError(error.message);
       }
     }
     // useFocusEffect instead of useEffect to update during each focus, so it is always using updated user line/stop preferences
-    useFocusEffect(
+    useFocusEffect( 
       useCallback(() => {
-        let oldUserLine;
-        let oldUserStop;
-
-        // if there is no line set, force user to go to settings
-        getItem('line')
-          .then(data => {
-            if (!data) {
-              navigation.navigate('Settings');
-            }
-
-            // temporarily store for checking for changes with settings
+        async function loadDeparturesOnFocus() {
+          try {
+            const savedLine = await getItem('line');
+            const savedStop = await getItem('stop');
             
-            oldUserLine = data;
-
-            return getItem('stop');
-          })
-          .then(data => {
-
-            oldUserStop = data;
-
-            if (!data) {
+            if (!savedLine || !savedStop) {
               navigation.navigate('Settings');
-            }
-          })
-          .finally(() => {
-            // only refresh when line and stop has changed.
-            if (oldUserLine === line && oldUserStop === stop) {
               return;
-            } else {
-              loadDepartures(); 
             }
-          })
-      }, [stop, line])
+            
+            // only refresh when line and stop has changed.
+            if (savedLine === line && savedStop === stop) {
+              return;
+            }
+  
+            loadDepartures();
+  
+          } catch (error) {
+            console.log("An error occured loading departures: ", error);
+          }
+        }
+
+        loadDeparturesOnFocus();
+      })
     );
 
     const onRefresh = () => {
@@ -97,10 +94,10 @@ function DepartureBoard({ navigation }) {
           <LineName 
             lineName={line} 
             stationName={stop} 
-            lineAbbreviation={lineAbbreviation.get(line)}
-            lineColour={lineColour.get(line)}
+            lineAbbreviation={lineAbbreviation.get(line) || ""}
+            lineColour={lineColour.get(line) || "#000"}
           />
-          <Text>Last Updated: {new Date().toTimeString()}</Text>
+          <Text>Last Updated: {currentTime}</Text>
           <ScrollView
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh}/>    
@@ -110,8 +107,7 @@ function DepartureBoard({ navigation }) {
               rowGap: 15
             }}
           >
-            {/* != for XOR */}
-            {loading != refreshing ? <ActivityIndicator size="large" /> : 
+            {loading ? <ActivityIndicator size="large" /> : 
               tripTimes.length != 0 ?
               tripTimes.map((trip, index) => (
                 <DepartureCard
@@ -124,6 +120,7 @@ function DepartureBoard({ navigation }) {
                 />
               )) : <Text>No departures found.</Text>
             }
+            {error && <LoadError errorMsg={error} onReload={onRefresh}/>}
           </ScrollView>
         </View>
       </View>

@@ -122,6 +122,8 @@ export async function getNextService() {
         ).sort(lineTimeCompare); // sort departures by time  
     } catch (error) {
         console.error(error);
+        throw new Error(`${error}`);
+        
         return [];
     }
 }
