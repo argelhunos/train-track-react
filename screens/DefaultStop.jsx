@@ -14,36 +14,83 @@ import trainStops from '../utils/trainStops';
 
 const Stack = createStackNavigator();
 
+const trainPolylines = [
+  { coordinates: kitchenerCoordinates, strokeColor: "#01773C", key: "KI" },
+  { coordinates: miltonCoordinates, strokeColor: "#D4600D", key: "MI" },
+  { coordinates: lakeshoreWestCoordinates, strokeColor: "#B21E43", key: "LW" },
+  { coordinates: lakeshoreEastCoordinates, strokeColor: "#E22426", key: "LE" },
+  { coordinates: barrieCoordinates, strokeColor: "#1657A7", key: "BR" },
+  { coordinates: richmondHillCoordinates, strokeColor: "#1795C6", key: "RH" },
+  { coordinates: stouffvilleCoordinates, strokeColor: "#8C5823", key: "ST" }
+];
+
 function DefaultStop({ route }) {
     const insets = useSafeAreaInsets();
-    const [stops, setStops] = useState([]);
     const navigation = useNavigation();
     const [defaultStop, setDefaultStop] = useState("");
     const mapRef = useRef(null);
 
     const animateToStation = (stationName) => {
+      const station = trainStops.find(stop => stop.title === stationName).coordinate;
+
       mapRef.current.animateToRegion(
         {
-          latitude: trainStops.find(stop => stop.title === stationName).coordinate.latitude,
-          longitude: trainStops.find(stop => stop.title === stationName).coordinate.longitude,
+          latitude: station.latitude,
+          longitude: station.longitude,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421
         }
       );
     }
 
+    const handleMarkerPress = async (stop, event) => {
+      if (!stop) {
+        return;
+      }
+
+      try {
+        await setItem('stop', event._targetInst.return.key);
+        await setDefaultStop(event._targetInst.return.key);
+        await setItem('line', stop.line)
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     useEffect(() => {
-      getItem("stop")
-        .then(result => {
-          setDefaultStop(result);
+      const fetchCurrentStop = async () => {
+        try {
+          const currentStop = await getItem('stop');
+          setDefaultStop(currentStop);
+
           if (result != null) {
-            animateToStation(result);
+            animateToStation(currentStop);
           }
-        })
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      fetchCurrentStop();
     }, []);
 
     // effect to monitor update from modal
     useEffect(() => {
+      // note to self: REMEMBER IF THERE IS NO CHANGE, YOU'RE WASTING CYCLES!!
+      const handleDefaultStopUpdate = async () => {
+        const { stationName, lineName } = route.params || {}; // this is cool keep doing stuff like this
+
+        if (!stationName || !lineName) {
+          return;
+        }
+  
+        try {
+          
+        } catch (error) {
+          
+        }
+      }
+
       if (route.params?.stationName && route.params?.lineName) {
         setItem('stop', route.params?.stationName)
           .then(setDefaultStop(route.params?.stationName))
@@ -54,8 +101,7 @@ function DefaultStop({ route }) {
 
     return (
         <View style={{
-            flex: 1,
-            backgroundColor: '#fff',
+            ...styles.screenContainer,
             paddingTop: insets.top,
             paddingLeft: insets.left,
             paddingRight: insets.right,
@@ -83,52 +129,15 @@ function DefaultStop({ route }) {
                         }}
                         customMapStyle={mapStyle}
                     >
-                        {/* probably want to change this to a .map one day */}
-                        <Polyline
-                            coordinates={kitchenerCoordinates}
-                            strokeColor="#01773C"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={miltonCoordinates}
-                            strokeColor="#D4600D"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={lakeshoreWestCoordinates}
-                            strokeColor="#B21E43"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={lakeshoreEastCoordinates}
-                            strokeColor="#E22426"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={barrieCoordinates}
-                            strokeColor="#1657A7"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={richmondHillCoordinates}
-                            strokeColor="#1795C6"
-                            strokeWidth={5}
-                        />
-                        <Polyline 
-                            coordinates={stouffvilleCoordinates}
-                            strokeColor="#8C5823"
-                            strokeWidth={5}
-                        />
+                        {trainPolylines.map(trainLine => 
+                          <Polyline coordinates={trainLine.coordinates} strokeColor={trainLine.strokeColor} strokeWidth={5} key={trainLine.key}/>
+                        )}
                         {trainStops.map(stop => 
                             <Marker
                                 title={stop.title}
                                 coordinate={stop.coordinate}
                                 key={stop.title}
-                                onPress={(e) => {
-                                  setItem('stop', e._targetInst.return.key)
-                                    .then(setDefaultStop(e._targetInst.return.key))
-                                    return setItem('line', stop.line);
-                                }}
+                                onPress={(event) => handleMarkerPress(stop, event)}
                                 id={stop.title}
                             >
                                 <View style={
@@ -162,6 +171,10 @@ function DefaultStop({ route }) {
 }
 
 const styles = StyleSheet.create({
+    screenContainer: {
+      flex: 1,
+      backgroundColor: '#fff',
+    },
     container: {
       backgroundColor: '#fff',
       flex: 1,

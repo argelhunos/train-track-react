@@ -12,7 +12,7 @@ export const getDB = async () => {
 
 export const initDB = async () => {
     try {
-        const db = getDB();
+        const db = await getDB();
         await db.execAsync(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, line TEXT, stop TEXT, time TEXT, isActive BOOLEAN);`);
         console.log("DB created");
     } catch (error) {

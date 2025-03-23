@@ -113,7 +113,7 @@ function Notifications({ route }) {
                             rowGap: 15
                             }}
                     >
-                        {isLoading ? <ActivityIndicator size="large" /> : notifications.map((notification) => {
+                        {isLoading && notifications.length != 0? <ActivityIndicator size="large" /> : notifications.map((notification) => {
                             return (
                                 <SavedNotification 
                                     notification={notification}
