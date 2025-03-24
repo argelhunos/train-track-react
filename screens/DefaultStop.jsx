@@ -43,14 +43,14 @@ function DefaultStop({ route }) {
       );
     }
 
-    const handleMarkerPress = async (stop, event) => {
+    const handleMarkerPress = async (stop) => {
       if (!stop) {
         return;
       }
 
       try {
-        await setItem('stop', event._targetInst.return.key);
-        await setDefaultStop(event._targetInst.return.key);
+        await setItem('stop', stop.title);
+        setDefaultStop(stop.title);
         await setItem('line', stop.line)
       } catch (error) {
         console.error(error);
@@ -63,7 +63,7 @@ function DefaultStop({ route }) {
           const currentStop = await getItem('stop');
           setDefaultStop(currentStop);
 
-          if (result != null) {
+          if (currentStop != null) {
             animateToStation(currentStop);
           }
         } catch (error) {
@@ -85,18 +85,16 @@ function DefaultStop({ route }) {
         }
   
         try {
-          
+          await setItem('stop', stationName);
+          setDefaultStop(stationName);
+          await setItem('line', lineName);
+          animateToStation(stationName);
         } catch (error) {
-          
+          console.error(error);
         }
       }
-
-      if (route.params?.stationName && route.params?.lineName) {
-        setItem('stop', route.params?.stationName)
-          .then(setDefaultStop(route.params?.stationName))
-          .then(setItem('line', route.params?.lineName))
-          .then(animateToStation(route.params?.stationName));
-      }
+      
+      handleDefaultStopUpdate();
     }, [route.params?.stationName, route.params?.lineName])
 
     return (
@@ -105,7 +103,7 @@ function DefaultStop({ route }) {
             paddingTop: insets.top,
             paddingLeft: insets.left,
             paddingRight: insets.right,
-            paddingBottom: insets.bottom + 200,
+            paddingBottom: insets.bottom
         }}>
             <FocusAwareStatusBar barStyle="light-content" /> 
             <View style={styles.container}>
@@ -137,7 +135,7 @@ function DefaultStop({ route }) {
                                 title={stop.title}
                                 coordinate={stop.coordinate}
                                 key={stop.title}
-                                onPress={(event) => handleMarkerPress(stop, event)}
+                                onPress={() => handleMarkerPress(stop)}
                                 id={stop.title}
                             >
                                 <View style={
@@ -190,7 +188,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 20,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        height: '70%'
     },
     map: {
         width: '100%',

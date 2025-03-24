@@ -1,6 +1,6 @@
 import {View, Text, StyleSheet, Pressable} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar';
 import LineName from '../components/LineName';
 import SettingsItem from '../components/SettingsItem';
@@ -12,19 +12,20 @@ import DefaultStopModal from './DefaultStopModal';
 import Notifications from './Notifications';
 import NotificationsModal from './NotificationsModal';
 import {PermissionsAndroid} from 'react-native';
-PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
 
 const Stack = createStackNavigator();
 
 function Settings() {
     const insets = useSafeAreaInsets();
-    const [stops, setStops] = useState([]);
     const navigation = useNavigation();
+
+    useEffect(() => {
+        PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    }, [])
 
     return (
         <View style={{
-            flex: 1,
-            backgroundColor: '#fff',
+            ...styles.parentContainer,
             paddingTop: insets.top,
             paddingLeft: insets.left,
             paddingRight: insets.right,
@@ -61,6 +62,10 @@ function Settings() {
 }
 
 const styles = StyleSheet.create({
+    parentContainer: {
+        flex: 1,
+        backgroundColor: '#fff'
+    },
     container: {
       backgroundColor: '#fff',
       flex: 1,

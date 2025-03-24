@@ -41,20 +41,8 @@ function NotificationsModal({route}) {
     };
 
     const onSubmit = () => {
-        console.log(selectedLine, selectedStop, date);
-        
         // only navigate if all fields are filled on notification creation
         if (selectedLine && selectedStop && date !== defaultDate) {
-            console.log(selectedLine, selectedStop, date);
-            navigation.navigate("Notifications", {
-                line: selectedLine,
-                stop: selectedStop,
-                time: formatDate(date),
-                isEditMode: editMode,
-                id: id
-            });
-        } else if (editMode) {
-            // double check if this is needed
             console.log(selectedLine, selectedStop, date);
             navigation.navigate("Notifications", {
                 line: selectedLine,

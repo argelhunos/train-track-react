@@ -7,7 +7,9 @@ function LoadError({ errorMsg, onReload }) {
             <MaterialIcons name="error" size={50} color="black"/> 
             <Text>An error occured while loading departures.</Text>
             <Text>{errorMsg}</Text>
-            <Button title="Retry" color={"#CECECD"} onPress={onReload}></Button>
+            {onReload &&
+                <Button title="Retry" color={"#CECECD"} onPress={onReload}></Button>
+            }
         </View>
     )
 }

@@ -5,26 +5,29 @@ import DepartureCard from '../components/Departure.jsx';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LineName from '../components/LineName.jsx';
 import FocusAwareStatusBar from '../components/FocusAwareStatusBar.jsx';
+import LoadError from '../components/LoadError.jsx';
 
 function UnionDepartureBoard({ navigation }) {
     const [loading, setLoading] = useState(false);
     const [tripTimes, setTripTimes] = useState([]);
-    const [currentTime, setCurrentTime] = useState(new Date().toTimeString());
+    const [currentTime, setCurrentTime] = useState(new Date().toLocaleDateString("en-CA"));
+    const [error, setError] = useState(null);
     const insets = useSafeAreaInsets();
 
-    const loadDepartures = () => {
+    const loadDepartures = async () => {
       setLoading(true);
-      getUnionDepartures()
-        .then(data => {
-            setTripTimes(data);
-            setLoading(false);
-            setCurrentTime(new Date().toTimeString());
-        })
-        .catch((error) => {
-            console.log(error);
-            setLoading(false);
-            setCurrentTime(new Date().toTimeString());
-        })
+
+      try {
+        const unionDepartures = await getUnionDepartures();
+        setTripTimes(unionDepartures);
+      } catch (error) {
+        console.error(error);
+        setTripTimes([]);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+        setCurrentTime(new Date().toLocaleTimeString("en-CA"));
+      }
     }
 
     useEffect(() => {
@@ -38,13 +41,11 @@ function UnionDepartureBoard({ navigation }) {
 
     return (
       <View style={{
-        flex: 1,
-        backgroundColor: '#fff',
+        ...styles.parentContainer,
         paddingTop: insets.top,
         paddingLeft: insets.left,
         paddingRight: insets.right,
         paddingBottom: insets.bottom,
-        gap: 10,
       }}>
         <FocusAwareStatusBar barStyle="light-content" /> 
         <View style={styles.container}>
@@ -73,6 +74,7 @@ function UnionDepartureBoard({ navigation }) {
                 />
               )) : <Text>No departures found.</Text>
             }
+            {error && <LoadError errorMsg={error} onReload={null} />}
           </ScrollView>
         </View>
       </View>
@@ -80,6 +82,11 @@ function UnionDepartureBoard({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  parentContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+    gap: 10
+  },
   container: {
     flex: 1,
     gap: 10,

@@ -123,8 +123,6 @@ export async function getNextService() {
     } catch (error) {
         console.error(error);
         throw new Error(`${error}`);
-        
-        return [];
     }
 }
 
