@@ -126,6 +126,7 @@ export async function getNextService() {
     }
 }
 
+// NOTE: should not be trusted for track numbers at union. will sometimes only display one track when there is two
 // retrieve all stops for a given trip number
 export async function getSchedule(tripNumber) {
     try {
@@ -217,12 +218,39 @@ export async function getMergedTripDetails(tripNumber) {
                 {
                     ...scheduledStop,
                     hasVisited: !remainingStops.some((remainingStop) => remainingStop.stop_id === scheduledStop.Code),
+                    
                 }
             ));
         }
 
     } catch (error) {
         console.error("An error has occurred getmerged: " + error);
+    }
+}
+
+// combine results from getSchedule and getRemainingStops for Union
+// basically same as getMergedTripDetails but to compensate for Union station platforms being inaccurate with getSchedule
+// to only be used on UnionDepartureBoard
+export async function getMergedUnionTripDetails(tripNumber) {
+    try {
+        const mergedTripDetails = await getMergedTripDetails(tripNumber);
+        const unionDepartures = await getUnionDepartures();
+
+        // get union station platform
+        const unionDepartureInfo = unionDepartures.find((departure) => departure.TripNumber === tripNumber)
+        const unionTrackInfo = unionDepartureInfo.Info;
+
+        return mergedTripDetails.map((stop) => {
+            if (stop.Code === "UN") {
+                return { ...stop, Track: {
+                    Scheduled: unionTrackInfo
+                } }
+            } else {
+                return { ...stop }
+            }
+        })
+    } catch (error) {
+        throw new Error("An error has occured: " + error);
     }
 }
 
@@ -255,6 +283,17 @@ export async function getUnionDepartures() {
                 Platform: trip.Info.includes("Wait") ? "Wait / Attendez" : "Platform " + trip.Platform,
             }
         )).sort(lineTimeCompare)
+    } catch (error) {
+        throw new Error("An error has occured: " + error);
+    }
+}
+
+export async function getUnionStationPlatform(tripNumber) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/V1/ServiceUpdate/UnionDepartures/All?key=${KEY}`);
+        let data = await response.json();
+
+        return data["AllDepartures"]["Trip"].find((trip) => trip.TripNumber === tripNumber).Info;
     } catch (error) {
         throw new Error("An error has occured: " + error);
     }

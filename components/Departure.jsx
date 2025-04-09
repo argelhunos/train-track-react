@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, TouchableNativeFeedback, Platform, LayoutAnimation } from 'react-native';
 import { useEffect, useState } from 'react';
-import { getCurrentTripInfo, getMergedTripDetails, getSchedule } from '../services/apiService';
+import { getCurrentTripInfo, getMergedTripDetails, getMergedUnionTripDetails } from '../services/apiService';
 import Stop from './Stop';
 import { unionLineColour } from '../data/titleAttributes';
 
@@ -27,18 +27,33 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
             return;
         }
 
-        getMergedTripDetails(tripNumber)
-            .then(data => {
-                setTripStops(data);
-                setLoadingMoreInfo(false);
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                setExpanded(!expanded);
-            })
-            .catch((error) => {
-                console.log(error);
-                setLoadingMoreInfo(false);
-                setExpanded(!expanded);
-            })
+        if (isUnionDeparture) {
+            getMergedUnionTripDetails(tripNumber)
+                .then(data => {
+                    setTripStops(data);
+                    setLoadingMoreInfo(false);
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setExpanded(!expanded);
+                })
+                .catch((error) => {
+                    console.log(error);
+                    setLoadingMoreInfo(false);
+                    setExpanded(!expanded);
+                })
+        } else {
+            getMergedTripDetails(tripNumber)
+                .then(data => {
+                    setTripStops(data);
+                    setLoadingMoreInfo(false);
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setExpanded(!expanded);
+                })
+                .catch((error) => {
+                    console.log(error);
+                    setLoadingMoreInfo(false);
+                    setExpanded(!expanded);
+                })
+        }
     }
 
     return (
@@ -98,6 +113,7 @@ function DepartureCard ({platform, time, destination, isDelayed, tripNumber, isU
                                     isFirstStop={stop.isFirstStop}
                                     isLastStop={stop.isLastStop}
                                     hasVisited={stop.hasVisited}
+                                    isUnionDeparture={isUnionDeparture}
                                 />
                             )}
                             {tripStops.length === 0 && 

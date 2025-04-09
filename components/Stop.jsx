@@ -1,6 +1,6 @@
 import { Text, View, StyleSheet } from 'react-native';
 
-function Stop({station, departureTime, platform, isFirstStop, isLastStop, hasVisited}) {
+function Stop({station, departureTime, platform, isFirstStop, isLastStop, hasVisited, isUnionDeparture = false}) {
     return (
         <View style={styles.container}>
             <View style={styles.platformName}>
@@ -23,7 +23,7 @@ function Stop({station, departureTime, platform, isFirstStop, isLastStop, hasVis
                     }}
                 >{station}</Text>
             </View>
-            <Text>{`${departureTime} - Platform ${platform}`}</Text>
+            <Text>{isUnionDeparture && isFirstStop ? platform : `${departureTime} - Platform ${platform}`}</Text>
         </View>
     )
 }
