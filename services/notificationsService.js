@@ -2,6 +2,7 @@ import { getDB } from "./database";
 import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
 import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
+import { ToastAndroid } from "react-native";
 
 //#region 
 // -------- toggle notifications in Firebase and local SQLite database --------
@@ -101,6 +102,12 @@ export const storeNotificationInFirestore = async (line, stop, time) => {
     } catch (error) {
         console.log("error storing notification in firebase", error)
     }
+}
+
+export const testDate = (time) => {
+    const [hour, minute] = time.split(":");
+    const cronString = `${minute} ${hour} * * *`;
+    ToastAndroid.show(cronString, ToastAndroid.SHORT);
 }
 
 export const fetchNotifications = async () => {

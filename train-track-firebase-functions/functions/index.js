@@ -1,159 +1,231 @@
+/* eslint-disable */
 // firebase function backend to send push notification to user
 
-// cloud functions sdk
-const { logger } = require("firebase-functions");
-const { onRequest } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-
 // firebase admin sdk for firestore
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-
-// firebase cloud messaging
-const { getMessaging } = require("firebase-admin/messaging");
+const {initializeApp} = require("firebase-admin/app");
 
 // get train api key for local testing
 require("dotenv").config();
 const BASE_URL = "https://api.openmetrolinx.com/OpenDataAPI";
-const TRAIN_API_KEY = process.env.EXPO_PUBLIC_API_KEY;
+
+// interact with google cloud scheduler
+const {CloudSchedulerClient} = require("@google-cloud/scheduler");
+
+const schedulerClient = new CloudSchedulerClient();
+const projectId = "train-track-d2ca0";
+const locationId = "us-central1";
+
+// full path to location where jobs are stored
+const parent = `projects/${projectId}/locations/${locationId}`;
+
+// firebase admin
+const admin = require("firebase-admin");
+const {getFirestore} = require("firebase-admin/firestore");
+const {getMessaging} = require("firebase-admin/messaging");
+const {onRequest} = require("firebase-functions/v2/https");
+
 
 initializeApp();
 
 function lineTimeCompare(lineA, lineB) {
-    // must convert everything to minutes since midnight for proper handling of past midnight
-    const [lineAHours, lineAMins] = lineA.DisplayedDepartureTime.split(":");
-    const [lineBHours, lineBMins] = lineB.DisplayedDepartureTime.split(":");
+  // must convert to minutes since midnight for proper handling of past midnight
+  const [lineAHours, lineAMins] = lineA.DisplayedDepartureTime.split(":");
+  const [lineBHours, lineBMins] = lineB.DisplayedDepartureTime.split(":");
 
-    let lineAMinsSinceMidnight = parseInt(lineAHours) * 60 + parseInt(lineAMins);
-    let lineBMinsSinceMidnight = parseInt(lineBHours) * 60 + parseInt(lineBMins);
+  let lineAMinsSinceMidnight = parseInt(lineAHours) * 60 + parseInt(lineAMins);
+  let lineBMinsSinceMidnight = parseInt(lineBHours) * 60 + parseInt(lineBMins);
 
-    // consider times 00:00-03:00 to be greater
-    if (lineAHours === "00" || lineAHours == "01" || lineAHours == "02" || lineAHours == "03" ) {
-        lineAMinsSinceMidnight += 24 * 60;
-    }
+  // consider times 00:00-03:00 to be greater
+  if (lineAHours === "00" || lineAHours == "01" || lineAHours == "02" || lineAHours == "03" ) {
+    lineAMinsSinceMidnight += 24 * 60;
+  }
 
-    if (lineBHours === "00" || lineBHours == "01" || lineBHours == "02" || lineBHours == "03" ) {
-        lineBMinsSinceMidnight += 24 * 60;
-    }
+  if (lineBHours === "00" || lineBHours == "01" || lineBHours == "02" || lineBHours == "03" ) {
+    lineBMinsSinceMidnight += 24 * 60;
+  }
 
-    if (lineAMinsSinceMidnight > lineBMinsSinceMidnight) {
-        return 1;
-    } else if (lineAMinsSinceMidnight < lineBMinsSinceMidnight) {
-        return -1;
-    } else {
-        return 0;
-    }
+  if (lineAMinsSinceMidnight > lineBMinsSinceMidnight) {
+    return 1;
+  } else if (lineAMinsSinceMidnight < lineBMinsSinceMidnight) {
+    return -1;
+  } else {
+    return 0;
+  }
 }
 
-// function to retrieve next departure from api
-async function getNextService(stopCode, userLine) {
-    try {
-        console.log(`${BASE_URL}/api/V1/Stop/NextService/${stopCode}?key=${TRAIN_API_KEY}`);
-        const response = await fetch(`${BASE_URL}/api/V1/Stop/NextService/${stopCode}?key=${TRAIN_API_KEY}`);
-        let data = await response.json();
 
-        // Check if "Lines" is null or undefined
-        if (!data["NextService"] || !data["NextService"]["Lines"]) {
-            return [];
-        }
+async function getNextService(stopCode, userLine, apiKey) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/V1/Stop/NextService/${stopCode}?key=${apiKey}`);
+    const data = await response.json();
 
-        // if "Lines" is null, there are no departures found.
-        return data["NextService"]["Lines"]
-            .filter((line) => line.LineName === userLine)
-            .map(line => {
-                const newScheduledDepartureTime = line.ScheduledDepartureTime.split(' ')[1].substring(0, 5);
-                const newComputedDepartureTime = line.ComputedDepartureTime.split(' ')[1].substring(0, 5);
-
-                return {
-                    ...line, // copy all old assets
-                    DisplayedDepartureTime: newComputedDepartureTime > newScheduledDepartureTime ? newComputedDepartureTime : newScheduledDepartureTime,
-                    DirectionName: line.DirectionName.substring(5),
-                    Delayed: newComputedDepartureTime > newScheduledDepartureTime,
-                    DisplayedPlatform: line.ActualPlatform === "" ? `Platform ${line.ScheduledPlatform}` : `Platform ${line.ActualPlatform}`,
-                }
-            }
-        ).sort(lineTimeCompare); // sort departures by time  
-    } catch (error) {
-        console.error(error);
-        return [];
+    // check if "Lines" is null or undefined
+    if (!data["NextService"] || !data["NextService"]["Lines"]) {
+      return [];
     }
+
+    // if "Lines" is null, there is no departures found
+    return data["NextService"]["Lines"]
+        .filter((line) => line.LineName === userLine)
+        .map((line) => {
+          const newScheduledDepartureTime = line.ScheduledDepartureTime.split(" ")[1].substring(0, 5);
+          const newComputedDepartureTime = line.ComputedDepartureTime.split(" ")[1].substring(0, 5);
+
+          return {
+            ...line, // copy all old assets
+            DisplayedDepartureTime: newComputedDepartureTime > newScheduledDepartureTime ? newComputedDepartureTime : newScheduledDepartureTime,
+            DirectionName: line.DirectionName.substring(5),
+            Delayed: newComputedDepartureTime > newScheduledDepartureTime,
+            DisplayedPlatform: line.ActualPlatform === "" ? `Platform ${line.ScheduledPlatform}` : `Platform ${line.ActualPlatform}`,
+          };
+        },
+        ).sort(lineTimeCompare); // sort departures by time
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 }
 
-exports.fireNotifications = onRequest(async (req, res) => {
+// ----- cloud scheduler operations
+async function createSchedulerJob(token, stopCode, schedule, line) {
+  console.log("attempting to create new scheduler job...");
+  console.log(schedule);
+  const job = {
+    description: `scheudled job for: ${stopCode}, ${schedule}, ${line}`,
+    httpTarget: {
+      uri: "https://firenotification-ro7m6aqmfa-uc.a.run.app",
+      httpMethod: "POST",
+      body: Buffer.from(JSON.stringify({token, stopCode, schedule, line})).toString("base64"),
+    },
+    schedule: schedule,
+    timeZone: "America/Toronto",
+  };
+
+  const request = {
+    parent,
+    job,
+  };
+
+  const [createdJob] = await schedulerClient.createJob(request);
+
+  console.log("successfully created job:");
+  console.log(`Name: ${createdJob.name}`);
+  console.log(`Description: ${createdJob.description}`);
+  console.log(`Schedule: ${createdJob.schedule}`);
+  console.log(`Target URI: ${createdJob.httpTarget.uri}`);
+
+  return createdJob.name;
+}
+
+// -----
+
+exports.sendTestNotification = onRequest(async (req, res) => {
+  const {token, title, body} = req.body;
+
+  try {
+    await admin.messaging().send({
+      notification: {title, body},
+      token,
+    });
+    res.status(200).send("Notification sent");
+  } catch (err) {
+    console.error("Error sending FCM", err);
+    res.status(500).send("Notification failed");
+  }
+});
+
+exports.fireNotification = onRequest(
+  {secrets: ["TRAIN_KEY"]},
+  async (req, res) => {
+  try {
+    let data;
+    console.log("attempting to fire notification...");
+
     try {
-        const db = getFirestore();
-        const messaging = getMessaging();
-
-        const currentDate = new Date();
-        const currentTime = currentDate.getUTCHours() * 60 + currentDate.getUTCMinutes(); // minutes since midnight
-        const oneMinuteAgo = currentTime - 1;
-
-        currentDate.setUTCHours(0, 0, 0, 0);
-
-        const dateOnly = currentDate;
-
-        console.log("current time: ", currentTime);
-        console.log("one minute ago: ", oneMinuteAgo);
-
-        // get all of the notifications that are active, have a time within the last minute, and have not been sent out today already
-        const snapshot = await db.collection("notifications")
-            .where("isActive", "==", true)
-            .where("minutesSinceMidnight", ">=", oneMinuteAgo)
-            .where("minutesSinceMidnight", "<=", currentTime)
-            .where("lastSent", "!=", Timestamp.fromDate(dateOnly))
-            .get();
-        
-        const snapshot2 = await db.collection("notifications")
-            .where("minutesSinceMidnight", ">=", oneMinuteAgo)
-            .get();
-
-        if (snapshot2.empty) {
-            return res.json({ result: "No active notifications found aaa"})
-        }
-
-        if (snapshot.empty) {
-            return res.json({ result: "No active notifications found"})
-        }
-        
-        // NOTE TO SELF: forEach does not respect async functions.
-        // getting notification data for each, and building the payload to send to correct token
-
-        for (const doc of snapshot.docs) {
-            const notification = doc.data();
-            const userDoc = await notification.docRef.get();
-            const fcmToken = userDoc.data().fcmToken;
-            const nextService = await getNextService(notification.station, notification.line);
-            console.log(nextService[0]);
-
-            // format data from api response
-            const body = `Heading towards ${nextService[0].DirectionName} departs at ${nextService[0].DisplayedDepartureTime} on ${nextService[0].DisplayedPlatform}.`;
-
-            const message = {
-                data: {
-                    title: `Next ${nextService[0].LineName} Departure`,
-                    body: body
-                },
-                token: fcmToken
-            }
-
-            getMessaging().send(message)
-                .then((response) => {
-                    console.log('Successfully sent message:', response);
-                })
-                .catch((error) => {
-                    console.log('Error sending message:', error);
-                })
-                .finally(() => {
-                    // update the last sent time to today
-                    db.collection("notifications").doc(doc.id).update({
-                        lastSent: Timestamp.fromDate(dateOnly)
-                    });
-                });
-
-        }
-        
-        res.json({ result: 'completed sending notifications' });
+      data = JSON.parse(Buffer.from(req.body, 'base64').toString());
     } catch (error) {
-        res.json({result: `error occured while firing notifications: ${error}`})
+      data = req.body;
     }
+
+    const {token, stopCode, line} = data;
+    const apiKey = process.env.TRAIN_KEY;
+    const nextService = await getNextService(stopCode, line, apiKey);
+
+    // format data from api response
+    const body = `Heading towards ${nextService[0].DirectionName} departs at ${nextService[0].DisplayedDepartureTime} on ${nextService[0].DisplayedPlatform}`;
+    console.log("body: " + body);
+    const message = {
+      data: {
+        title: `Next ${nextService[0].LineName} Departure`,
+        body: body,
+      },
+      token: token,
+    };
+
+    // send message to user
+    getMessaging().send(message)
+        .then((response) => {
+          console.log("Successfully sent message: ", response);
+        })
+        .catch((error) => {
+          console.log("Error sending message: ", error);
+        });
+
+    res.json({result: "completed sending notification"});
+  } catch (error) {
+    res.json({result: `error occurred while firing notification: ${error}`});
+  }
+});
+
+exports.scheduleNotification = onRequest(async (req, res) => {
+  const {givenUserDoc, stopCode, schedule, line} = req.body;
+
+  try {
+    // grab fcmToken from firebase using provided userDoc
+    const db = getFirestore();
+    const docRef = db.doc(givenUserDoc);
+    const userDoc = await docRef.get();
+    const fcmToken = userDoc.data().fcmToken;
+
+    // store notification into firebase
+    const notificationCollectionRef = await db.collection("notifications");
+
+    const newNotif = {
+      line: line,
+      stopCode: stopCode,
+      schedule: schedule,
+    };
+
+    try {
+      const newNotificationDocRef = await notificationCollectionRef.add(newNotif);
+      console.log("Notification written with id: " + newNotificationDocRef.id);
+
+      // schedule cloud job
+      await createSchedulerJob(fcmToken, stopCode, schedule, line);
+    } catch (error) {
+      throw new Error("Error adding notification to firestore: " + error);
+    }
+
+    // return status 200
+    res.status(200).send("Successfully scheduled notification");
+  } catch (error) {
+    res.status(500).send("Scheduling notification failed: " + error);
+  }
+});
+
+exports.deleteNotification = onRequest(async (req, res) => {
+  const {jobId} = req.body;
+
+  try {
+    const request = {
+      name: jobId,
+    };
+
+    // delete the job
+    const response = await schedulerClient.deleteJob(request);
+    console.log(response);
+    res.status(200).send("successfully deleted notification: " + jobId);
+  } catch (error) {
+    res.status(500).send("deleting notification failed: " + error);
+  }
 });

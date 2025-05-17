@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import { initDB } from '../services/database';
-import { fetchNotifications, addNotification, editNotification, deleteNotification, storeNotificationInFirestore } from '../services/notificationsService';
+import { fetchNotifications, addNotification, editNotification, deleteNotification, storeNotificationInFirestore, testDate } from '../services/notificationsService';
 
 const Stack = createStackNavigator();
 
@@ -33,6 +33,7 @@ function Notifications({ route }) {
     const handleAddNotification = async () => {
         try {
             await storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time);
+            testDate(route.params.time);
             await addNotification(route.params.line, route.params.stop, route.params.time);
             const data = await fetchNotifications();
             setNotifications(data);
