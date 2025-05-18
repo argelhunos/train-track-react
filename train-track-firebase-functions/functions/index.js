@@ -87,15 +87,15 @@ async function getNextService(stopCode, userLine, apiKey) {
 }
 
 // ----- cloud scheduler operations
-async function createSchedulerJob(token, stopCode, schedule, line) {
+async function createSchedulerJob(token, stopCode, schedule, line, towardsUnion) {
   console.log("attempting to create new scheduler job...");
   console.log(schedule);
   const job = {
-    description: `scheudled job for: ${stopCode}, ${schedule}, ${line}`,
+    description: `scheduled job for: ${stopCode}, ${schedule}, ${line}, towardsUnion: ${towardsUnion}`,
     httpTarget: {
       uri: "https://firenotification-ro7m6aqmfa-uc.a.run.app",
       httpMethod: "POST",
-      body: Buffer.from(JSON.stringify({token, stopCode, schedule, line})).toString("base64"),
+      body: Buffer.from(JSON.stringify({token, stopCode, schedule, line, towardsUnion})).toString("base64"),
     },
     schedule: schedule,
     timeZone: "America/Toronto",
@@ -147,16 +147,35 @@ exports.fireNotification = onRequest(
       data = req.body;
     }
 
-    const {token, stopCode, line} = data;
+    const {token, stopCode, line, towardsUnion} = data;
     const apiKey = process.env.TRAIN_KEY;
     const nextService = await getNextService(stopCode, line, apiKey);
 
+    // filter API results to first either towards union or away from union
+    let nextDeparture;
+    
+    if (towardsUnion) {
+      nextDeparture = nextService.find((departure) => departure.DirectionName.includes("Union Station"));
+    } else {
+      nextDeparture = nextService.find((departure) => !departure.DirectionName.includes("Union Station"));
+    }
+
     // format data from api response
-    const body = `Heading towards ${nextService[0].DirectionName} departs at ${nextService[0].DisplayedDepartureTime} on ${nextService[0].DisplayedPlatform}`;
+    let title = "";
+    let body = "";
+
+    if (nextDeparture == null) {
+      title = ""
+      body = `No upcoming departures found for your saved ${line} trip.`;
+    } else {
+      title = `Next ${nextDeparture.LineName} Departure`;
+      body = `Heading towards ${nextDeparture.DirectionName} departs at ${nextDeparture.DisplayedDepartureTime} on ${nextDeparture.DisplayedPlatform}`;
+    }
+
     console.log("body: " + body);
     const message = {
       data: {
-        title: `Next ${nextService[0].LineName} Departure`,
+        title: title,
         body: body,
       },
       token: token,
@@ -178,7 +197,7 @@ exports.fireNotification = onRequest(
 });
 
 exports.scheduleNotification = onRequest(async (req, res) => {
-  const {givenUserDoc, stopCode, schedule, line} = req.body;
+  const {givenUserDoc, stopCode, schedule, line, towardsUnion} = req.body;
 
   try {
     // grab fcmToken from firebase using provided userDoc
@@ -190,42 +209,107 @@ exports.scheduleNotification = onRequest(async (req, res) => {
     // store notification into firebase
     const notificationCollectionRef = await db.collection("notifications");
 
-    const newNotif = {
+    const newNotif = { 
       line: line,
       stopCode: stopCode,
       schedule: schedule,
+      enabled: true,
+      towardsUnion: towardsUnion,
     };
+
+    let createdJob;
+    let storedNotificationId;
 
     try {
       const newNotificationDocRef = await notificationCollectionRef.add(newNotif);
       console.log("Notification written with id: " + newNotificationDocRef.id);
-
+      storedNotificationId = newNotificationDocRef.id;
+      
       // schedule cloud job
-      await createSchedulerJob(fcmToken, stopCode, schedule, line);
+      createdJob = await createSchedulerJob(fcmToken, stopCode, schedule, line, towardsUnion);
+
+      // add cloud job name to firestore
+      newNotificationDocRef.update({ schedulerName: createdJob });
     } catch (error) {
       throw new Error("Error adding notification to firestore: " + error);
     }
 
     // return status 200
-    res.status(200).send("Successfully scheduled notification");
+    res.status(200).json(
+      { 
+        createdJob: createdJob,
+        notificationId: storedNotificationId,
+      }
+    );
   } catch (error) {
     res.status(500).send("Scheduling notification failed: " + error);
   }
 });
 
 exports.deleteNotification = onRequest(async (req, res) => {
-  const {jobId} = req.body;
+  const {cloudJobPath, firebaseDocumentId} = req.body;
 
   try {
     const request = {
-      name: jobId,
+      name: cloudJobPath,
     };
 
-    // delete the job
+    // delete the scheduled job
     const response = await schedulerClient.deleteJob(request);
-    console.log(response);
-    res.status(200).send("successfully deleted notification: " + jobId);
+
+    // delete record from firebase
+    const db = getFirestore();
+    const notificationCollectionRef = db.collection("notifications");
+
+    await notificationCollectionRef.doc(firebaseDocumentId).delete();
+
+    res.status(200).send("successfully deleted notification");
   } catch (error) {
     res.status(500).send("deleting notification failed: " + error);
   }
 });
+
+exports.toggleNotification = onRequest(async (req, res) => {
+  const {cloudJobPath, firebaseDocumentId} = req.body;
+
+  const request = {
+    name: cloudJobPath,
+  };
+
+  console.log("attempting to toggle notification...");
+
+  try {
+    // get notification status
+    const db = getFirestore();
+    const notificationCollectionRef = db.collection("notifications");
+    const notificationDocRef = notificationCollectionRef.doc(firebaseDocumentId);
+    const notificationDocument = await notificationDocRef.get();
+    const notificationData = notificationDocument.data();
+
+    if (!notificationData) {
+      throw new Error("Notification not found.");
+    }
+
+    const currentStatus = notificationData.enabled;
+
+    if (currentStatus === true) {
+      // pause job
+      const schedulerResponse = await schedulerClient.pauseJob(request);
+    } else {
+      // resume job
+      const schedulerResponse = await schedulerClient.resumeJob(request);
+    }
+
+    // change status in firebase
+    notificationDocRef.update(
+      {
+        enabled: !currentStatus,
+      }
+    );
+
+    res.status(200).send("Successfully toggled notification to status: " + !currentStatus);
+  } catch (error) {
+    res.status(500).send("Error occured toggling notification: " + error);
+  }
+});
+
