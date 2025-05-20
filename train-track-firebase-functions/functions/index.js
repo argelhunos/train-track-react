@@ -309,7 +309,73 @@ exports.toggleNotification = onRequest(async (req, res) => {
 
     res.status(200).send("Successfully toggled notification to status: " + !currentStatus);
   } catch (error) {
-    res.status(500).send("Error occured toggling notification: " + error);
+    res.status(500).send("Error occurred toggling notification: " + error);
   }
 });
 
+exports.editNotification = onRequest(async (req, res) => {
+  const {
+    cloudJobPath, 
+    firebaseDocumentId, 
+    givenUserDoc,
+    notification: {
+      stopCode,
+      schedule,
+      line,
+      towardsUnion,
+      enabled,
+    }
+  } = req.body;
+
+  try {
+    // edit notification in firebase
+    const db = getFirestore();
+    
+    // grab fcm token
+    const docRef = db.doc(givenUserDoc);
+    const userDoc = await docRef.get();
+    const token = userDoc.data().fcmToken;
+
+    const updatedNotification = { 
+      line: line,
+      stopCode: stopCode,
+      schedule: schedule,
+      enabled: enabled,
+      towardsUnion: towardsUnion,
+    };
+
+    const notificationCollectionRef = db.collection("notifications");
+
+    await notificationCollectionRef.doc(firebaseDocumentId).update(updatedNotification);
+
+    // edit notification in cloud scheduler
+
+    const newBody = {
+      token: token,
+      stopCode: stopCode,
+      schedule: schedule,
+      line: line,
+      towardsUnion: towardsUnion,
+    }
+
+    const request = {
+      job: {
+        name: cloudJobPath,
+        schedule: schedule,
+        description: `scheduled job for: ${stopCode}, ${schedule}, ${line}, towardsUnion: ${towardsUnion}`,
+        httpTarget: {
+          body: Buffer.from(JSON.stringify(newBody)),
+          uri: "https://firenotification-ro7m6aqmfa-uc.a.run.app",
+          httpMethod: "POST"
+        },
+        timeZone: "America/Toronto",
+      },
+    }
+
+    const response = await schedulerClient.updateJob(request);
+
+    res.status(200).send("Successfully edited notification.");
+  } catch (error) {
+    res.status(500).send("Error occurred editing notification: " + error);
+  }
+});
