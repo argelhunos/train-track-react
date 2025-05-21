@@ -3,6 +3,13 @@ import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
 import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
 import { ToastAndroid } from "react-native";
+import Constants from 'expo-constants';
+
+const SCHEDULE_NOTIFICATION = "https://us-central1-train-track-d2ca0.cloudfunctions.net/scheduleNotification";
+const EDIT_NOTIFICATION = "https://us-central1-train-track-d2ca0.cloudfunctions.net/editNotification";
+const TOGGLE_NOTIFICATION = "https://us-central1-train-track-d2ca0.cloudfunctions.net/toggleNotification";
+const DELETE_NOTIFICATION = "https://us-central1-train-track-d2ca0.cloudfunctions.net/deleteNotification";
+const FUNCTION_KEY = Constants.expoConfig.extra.functionKey;
 
 //#region 
 // -------- toggle notifications in Firebase and local SQLite database --------
@@ -37,10 +44,10 @@ const toggleNotificationInFirebase = async (line, stop, time) => {
     }
 }
 
-const toggleNotificationActiveLocal = async (line, stop, time) => {
+const toggleNotificationActiveLocal = async (id) => {
     try {
         const db = await getDB();
-        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE line = ? AND stop = ? AND time = ?`, [line, stop, time]);
+        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE id = ?`, [id]);
         console.log("Notification toggled");
         const allRows = await db.getAllAsync('SELECT * FROM notifications');
         console.log(allRows);
@@ -49,10 +56,10 @@ const toggleNotificationActiveLocal = async (line, stop, time) => {
     }
 }
 
-export const toggleNotification = async (line, stop, time, setNotificationActive) => {
+export const toggleNotification = async (id, setNotificationActive) => {
     try {
-        await toggleNotificationInFirebase(line, stop, time);
-        await toggleNotificationActiveLocal(line, stop, time);
+        // await toggleNotificationInFirebase(line, stop, time);
+        await toggleNotificationActiveLocal(id);
         setNotificationActive(prev => !prev);
     } catch (error) {
         console.log(error);
@@ -63,10 +70,10 @@ export const toggleNotification = async (line, stop, time, setNotificationActive
 //#region
 // ------------- CRUD operations for notifications screen -------
 
-export const addNotification = async (line, stop, time) => {
+export const addNotification = async (line, stop, time, firebaseId, cloudSchedulerName, towardsUnion) => {
     try {
         const db = await getDB();
-        const result = await db.runAsync('INSERT INTO notifications (line, stop, time, isActive) VALUES (?, ?, ?, ?)', line, stop, time, 1);
+        const result = await db.runAsync('INSERT INTO notifications (line, stop, time, isActive, firebaseId, cloudSchedulerName, towardsUnion) VALUES (?, ?, ?, ?, ?, ?, ?)', line, stop, time, 1, firebaseId, cloudSchedulerName, towardsUnion);
         console.log("added notification: ", result);
         return result;        
     } catch (error) {
@@ -74,37 +81,40 @@ export const addNotification = async (line, stop, time) => {
     }
 }
 
-// note: time gets converted to minutes since midnight to store in the database for better querying in backend
-// note 2: lastSent starts off as null to represent that it has not been sent ever
-export const storeNotificationInFirestore = async (line, stop, time) => {
+export const storeNotificationInCloud = async (line, stop, time, towardsUnion) => {
     try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", Application.getAndroidId());
-        const stopCode = stopToCodeMap.get(stop);
-        const minutesSinceMidnight = convertTimeToUTCMinutesSinceMidnight(time);
+        const userDoc = `users/${Application.getAndroidId()}`;
+        const schedule = convertTimeToCronSchedule(time);
+        const stopCode = stopToCodeMap(stop);
 
-
-        // old date to represent that it has not been sent yet
-        const defaultDate = new Date();
-        defaultDate.setUTCHours(0, 0, 0, 0);
-        defaultDate.setUTCFullYear(1970, 0, 1);
-
-        await addDoc(collection(db, "notifications"), {
-            docRef: userDocRef,
-            isActive: true,
-            station: stopCode,
+        const notificationBody = {
+            givenUserDoc: userDoc,
+            stopCode: stopCode,
+            schedule: schedule,
             line: line,
-            time: time,
-            minutesSinceMidnight: minutesSinceMidnight,
-            lastSent: defaultDate,
+            towardsUnion: towardsUnion
+        };
+        
+        const response = await fetch(SCHEDULE_NOTIFICATION, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': FUNCTION_KEY
+            },
+            body: JSON.stringify(notificationBody)
         });
+
+        const { createdJob, notificationId } = await response.json();
         console.log("notification stored in firebase successfully");
+
+        return { createdJob, notificationId };
     } catch (error) {
         console.log("error storing notification in firebase", error)
     }
 }
 
-export const testDate = (time) => {
+//TODO: move this to utils
+export const convertTimeToCronSchedule = (time) => {
     const [hour, minute] = time.split(":");
     const cronString = `${minute} ${hour} * * *`;
     ToastAndroid.show(cronString, ToastAndroid.SHORT);
@@ -126,53 +136,26 @@ export const fetchNotifications = async () => {
     }
 }
 
-export const editNotification = async (id, newLine, newStop, newTime) => {
+export const editNotification = async (id, newLine, newStop, newTime, towardUnion) => {
     try {
+        console.log("hi");
         const db = await getDB();
-        const notificationToEdit = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
-        await db.runAsync('UPDATE notifications SET line = ?, stop = ?, time = ? WHERE id = ?', newLine, newStop, newTime, id);
-        await editNotificationInFirebase(
-            { line: notificationToEdit.line, stop: notificationToEdit.stop, time: notificationToEdit.time }, // old data
-            { line: newLine, stop: newStop, time: newTime } // new data
-        )
+        await db.runAsync('UPDATE notifications SET line = ?, stop = ?, time = ?, towardsUnion = ? WHERE id = ?', newLine, newStop, newTime, towardUnion == 1 ? true : false, id);
+        // await editNotificationInFirebase(
+        //     { line: notificationToEdit.line, stop: notificationToEdit.stop, time: notificationToEdit.time }, // old data
+        //     { line: newLine, stop: newStop, time: newTime } // new data
+        // )
     } catch (error) {
         console.log("there was an error editing the notification: ", error);
     }
 }
 
-export const editNotificationInFirebase = async (oldData, newData) => {
+// TODO: again, delete when completely removed
+export const editNotificationInCloud = async () => {
     try {
         console.log("editing notification in firebase");
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", Application.getAndroidId());
-        const minutesSinceMidnight = convertTimeToUTCMinutesSinceMidnight(newData.time);
 
-        // oops my bad. query stores the stop using the code, make sure to convert name to code
-        const oldStopCode = convertStopToCode(oldData.stop);
-        const newStopCode = convertStopToCode(newData.stop);
-
-        const q = query(
-            collection(db, "notifications"),
-            where('docRef', '==', userDocRef),
-            where('station', '==', oldStopCode),
-            where('line', '==', oldData.line),
-            where('time', '==', oldData.time)
-        );
-
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach(notification => {
-            updateDoc(notification.ref, {
-                line: newData.line,
-                station: newStopCode,
-                time: newData.time,
-                minutesSinceMidnight: minutesSinceMidnight
-            })
-        });
-
-        if (querySnapshot.empty) {
-            console.log("no notifications found to edit");
-        }
+        
     } catch (error) {
         console.log("error editing notification in firebase", error);
     }
@@ -183,41 +166,42 @@ export const deleteNotification = async (id) => {
         const db = await getDB();
         const notificationToDelete = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
         await db.runAsync('DELETE FROM notifications WHERE id = ?', id);
-        await deleteNotificationInFirebase(notificationToDelete.line, notificationToDelete.stop, notificationToDelete.time);
+        // await deleteNotificationInFirebase(notificationToDelete.line, notificationToDelete.stop, notificationToDelete.time);
     } catch (error) {
         console.log(error);
     }
 }
 
-export const deleteNotificationInFirebase = async (line, stop, time) => {
-    try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", Application.getAndroidId());
-        const stopCode = stopToCodeMap.get(stop);
-        const q = query(
-            collection(db, "notifications"),
-            where('docRef', '==', userDocRef),
-            where('station', '==', stopCode),
-            where('line', '==', line),
-            where('time', '==', time)
-        );
+// again not needed
+// export const deleteNotificationInFirebase = async (line, stop, time) => {
+//     try {
+//         const db = getFirestore();
+//         const userDocRef = doc(db, "users", Application.getAndroidId());
+//         const stopCode = stopToCodeMap.get(stop);
+//         const q = query(
+//             collection(db, "notifications"),
+//             where('docRef', '==', userDocRef),
+//             where('station', '==', stopCode),
+//             where('line', '==', line),
+//             where('time', '==', time)
+//         );
 
-        const querySnapshot = await getDocs(q);
+//         const querySnapshot = await getDocs(q);
 
-        querySnapshot.forEach(notification => {
-            // old namespace approach (doing the doc function is redundant)
-            // deleteDoc(doc(db, "notifications", notification.id));
-            deleteDoc(notification.ref);
-            console.log("successfully deleted notif", notification.id);
-        });
+//         querySnapshot.forEach(notification => {
+//             // old namespace approach (doing the doc function is redundant)
+//             // deleteDoc(doc(db, "notifications", notification.id));
+//             deleteDoc(notification.ref);
+//             console.log("successfully deleted notif", notification.id);
+//         });
 
-        if (querySnapshot.empty) {
-            console.log("no notifications found to delete");
-        }
-    } catch (error) {
-        console.log("error deleting notification in firebase", error);
-    }
-}
+//         if (querySnapshot.empty) {
+//             console.log("no notifications found to delete");
+//         }
+//     } catch (error) {
+//         console.log("error deleting notification in firebase", error);
+//     }
+// }
 
 const dropTable = async () => {
     try {
@@ -232,6 +216,7 @@ const dropTable = async () => {
 
 //#region
 // TODO: MOVE THIS TO UTILS
+// TODO: this actually isn't needed anymore bc better backend design coming
 const convertTimeToUTCMinutesSinceMidnight = (time) => {
     const [hours, minutes] = time.split(":");
     const date = new Date();

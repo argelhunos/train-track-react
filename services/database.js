@@ -13,7 +13,7 @@ export const getDB = async () => {
 export const initDB = async () => {
     try {
         const db = await getDB();
-        await db.execAsync(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, line TEXT, stop TEXT, time TEXT, isActive BOOLEAN);`);
+        await db.execAsync(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, line TEXT, stop TEXT, time TEXT, isActive BOOLEAN, firebaseId TEXT, cloudSchedulerName TEXT, towardsUnion TRUE);`);
         console.log("DB created");
     } catch (error) {
         console.log(error);

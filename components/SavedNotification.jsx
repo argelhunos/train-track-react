@@ -7,7 +7,7 @@ import { toggleNotification } from '../services/notificationsService';
 import SavedNotificationOptionsMenu from './SavedNotificationOptionsMenu';
 
 function SavedNotification ({notification, deleteMethod}) {
-    const { time, line, stop, isActive } = notification;
+    const { time, line, stop, isActive, id } = notification;
     const [expanded, setExpanded] = useState(false);
     const [notificationActive, setNotificationActive] = useState(isActive);
     const navigation = useNavigation();
@@ -48,7 +48,7 @@ function SavedNotification ({notification, deleteMethod}) {
                     </Pressable>
                     <Switch 
                         value={notificationActive} 
-                        onValueChange={() => toggleNotification(line, stop, time, setNotificationActive)}
+                        onValueChange={() => toggleNotification(id, setNotificationActive)}
                         trackColor={{ false: "#767577", true: "#B2B8AD" }}
                         thumbColor={notificationActive ? "#4E8D61" : "#f4f3f4"}
                     />

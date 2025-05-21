@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import SavedNotification from '../components/SavedNotification';
 import { initDB } from '../services/database';
-import { fetchNotifications, addNotification, editNotification, deleteNotification, storeNotificationInFirestore, testDate } from '../services/notificationsService';
+import { fetchNotifications, addNotification, editNotification, deleteNotification, storeNotificationInCloud } from '../services/notificationsService';
 
 const Stack = createStackNavigator();
 
@@ -32,9 +32,8 @@ function Notifications({ route }) {
 
     const handleAddNotification = async () => {
         try {
-            await storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time);
-            testDate(route.params.time);
-            await addNotification(route.params.line, route.params.stop, route.params.time);
+            // await storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time);
+            await addNotification(route.params.line, route.params.stop, route.params.time, "test", "test", route.params.towardsUnion);
             const data = await fetchNotifications();
             setNotifications(data);
         } catch (error) {
@@ -44,7 +43,8 @@ function Notifications({ route }) {
 
     const handleEditNotification = async () => {
         try {
-            await editNotification(route.params.id, route.params.line, route.params.stop, route.params.time);
+            console.log("editing notification");
+            await editNotification(route.params.id, route.params.line, route.params.stop, route.params.time, route.params.towardsUnion);
             const data = await fetchNotifications();
             setNotifications(data);
         } catch (error) {
@@ -63,7 +63,7 @@ function Notifications({ route }) {
             handleEditNotification();
         }
 
-        if (params.line && params.stop && params.time) {
+        if (!params.isEditMode && params.line && params.stop && params.time) {
             handleAddNotification();
         }
     }

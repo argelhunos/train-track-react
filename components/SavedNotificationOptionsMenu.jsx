@@ -3,7 +3,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 
 function SavedNotificationOptionsMenu({notification, deleteMethod}) {
-    const { time, line, id, stop } = notification;
+    const { time, line, id, stop, towardsUnion } = notification;
     const navigation = useNavigation();
 
     return (
@@ -17,7 +17,8 @@ function SavedNotificationOptionsMenu({notification, deleteMethod}) {
                                 line: line,
                                 stop: stop,
                                 time: time,
-                                id: id
+                                id: id,
+                                towardsUnion: towardsUnion
                             }
                         )
                 }

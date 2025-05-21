@@ -38,6 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   extra: {
     apiKey: process.env.EXPO_PUBLIC_API_KEY,
+    functionKey: process.env.FIREBASE_FUNCTIONS_KEY,
     eas: {
       projectId: "badb8d77-7acc-4ef2-9a9f-8fa291453b29"
     }

@@ -1,4 +1,4 @@
-import { View, StyleSheet, Text, Pressable } from "react-native";
+import { View, StyleSheet, Text, Pressable, Switch } from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SelectList } from "react-native-dropdown-select-list";
@@ -9,10 +9,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { getStopsWithLine } from "../data/dropdownOptions";
 
 function NotificationsModal({route}) {
-    const { editMode = false, id, line = '', stop = '', time = '00:00'} = route.params || {}; // or empty object if no params to handle undefined
+    const { editMode = false, id, line = '', stop = '', time = '00:00', towardsUnion} = route.params || {}; // or empty object if no params to handle undefined
     const insets = useSafeAreaInsets();
     const [selectedLine, setSelectedLine] = useState(line);
     const [selectedStop, setSelectedStop] = useState(stop);
+    const [isTowardsUnion, setIsTowardsUnion] = useState(towardsUnion == 1);
     const [stops, setStops] = useState([]);
     const navigation = useNavigation();
     let defaultDate = new Date(0);
@@ -49,7 +50,8 @@ function NotificationsModal({route}) {
                 stop: selectedStop,
                 time: formatDate(date),
                 isEditMode: editMode,
-                id: id
+                id: id,
+                towardsUnion: isTowardsUnion
             });
         }
     };
@@ -119,6 +121,15 @@ function NotificationsModal({route}) {
                             <MaterialIcons name="edit" size={20}/>
                         </Pressable> 
                     </View>
+                    <View style={styles.directionSelector}>
+                        <Text style={styles.sectionTitle}>Towards Union?</Text>
+                        <Switch
+                            value={isTowardsUnion}
+                            onValueChange={() => setIsTowardsUnion(prev => !prev)}
+                            trackColor={{ false: "#767577", true: "#B2B8AD" }}
+                            thumbColor={"#4E8D61"}
+                        ></Switch>
+                    </View>
                     <View style={styles.formButtons}>
                         <Pressable onPress={() => navigation.goBack()}>
                             <Text>Cancel</Text>
@@ -172,7 +183,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontWeight: '500',
-        fontSize: 15
+        fontSize: 15,
     },
     editTimeButton: {
         backgroundColor: '#7cab84',
@@ -184,6 +195,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
         alignSelf: 'flex-end'
+    },
+    directionSelector: {
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     }
 });
 

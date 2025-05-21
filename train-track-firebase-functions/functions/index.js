@@ -196,7 +196,15 @@ exports.fireNotification = onRequest(
   }
 });
 
-exports.scheduleNotification = onRequest(async (req, res) => {
+exports.scheduleNotification = onRequest(
+  {secrets: ["FUNCTION_KEY"]},
+  async (req, res) => {
+  const authKey = req.headers['x-api-key']
+
+  if (authKey !== process.env.FUNCTION_KEY) {
+    return res.status(403).send("Forbidden");
+  }
+
   const {givenUserDoc, stopCode, schedule, line, towardsUnion} = req.body;
 
   try {
@@ -372,7 +380,13 @@ exports.editNotification = onRequest(async (req, res) => {
       },
     }
 
-    const response = await schedulerClient.updateJob(request);
+    const [response] = await schedulerClient.updateJob(request);
+
+    // attach cloud job name to firestore
+    await notificationCollectionRef.doc(firebaseDocumentId).update({
+      ...updatedNotification,
+      schedulerName: response.name
+    });
 
     res.status(200).send("Successfully edited notification.");
   } catch (error) {
