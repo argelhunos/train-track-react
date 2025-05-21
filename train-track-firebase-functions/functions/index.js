@@ -199,7 +199,7 @@ exports.fireNotification = onRequest(
 exports.scheduleNotification = onRequest(
   {secrets: ["FUNCTION_KEY"]},
   async (req, res) => {
-  const authKey = req.headers['x-api-key']
+  const authKey = req.headers['x-api-key'];
 
   if (authKey !== process.env.FUNCTION_KEY) {
     return res.status(403).send("Forbidden");
@@ -254,8 +254,15 @@ exports.scheduleNotification = onRequest(
   }
 });
 
-exports.deleteNotification = onRequest(async (req, res) => {
+exports.deleteNotification = onRequest(
+  {secrets: ["FUNCTION_KEY"]},
+  async (req, res) => {
   const {cloudJobPath, firebaseDocumentId} = req.body;
+  const authKey = req.headers['x-api-key'];
+
+  if (authKey !== process.env.FUNCTION_KEY) {
+    return res.status(403).send("Forbidden");
+  }
 
   try {
     const request = {

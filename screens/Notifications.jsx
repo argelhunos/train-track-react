@@ -33,7 +33,7 @@ function Notifications({ route }) {
     const handleAddNotification = async () => {
         try {
             // await storeNotificationInFirestore(route.params.line, route.params.stop, route.params.time);
-            await addNotification(route.params.line, route.params.stop, route.params.time, "test", "test", route.params.towardsUnion);
+            await addNotification(route.params.line, route.params.stop, route.params.time, route.params.towardsUnion);
             const data = await fetchNotifications();
             setNotifications(data);
         } catch (error) {

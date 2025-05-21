@@ -70,10 +70,15 @@ export const toggleNotification = async (id, setNotificationActive) => {
 //#region
 // ------------- CRUD operations for notifications screen -------
 
-export const addNotification = async (line, stop, time, firebaseId, cloudSchedulerName, towardsUnion) => {
+export const addNotification = async (line, stop, time, towardsUnion) => {
     try {
         const db = await getDB();
-        const result = await db.runAsync('INSERT INTO notifications (line, stop, time, isActive, firebaseId, cloudSchedulerName, towardsUnion) VALUES (?, ?, ?, ?, ?, ?, ?)', line, stop, time, 1, firebaseId, cloudSchedulerName, towardsUnion);
+
+        // store notification in firebase first to get corresponding firebaseId and cloudSchedulerName
+        const {createdJob, notificationId} = await storeNotificationInCloud(line, stop, time, towardsUnion);
+
+        // store notification locally
+        const result = await db.runAsync('INSERT INTO notifications (line, stop, time, isActive, firebaseId, cloudSchedulerName, towardsUnion) VALUES (?, ?, ?, ?, ?, ?, ?)', line, stop, time, 1, notificationId, createdJob, towardsUnion);
         console.log("added notification: ", result);
         return result;        
     } catch (error) {
@@ -85,7 +90,7 @@ export const storeNotificationInCloud = async (line, stop, time, towardsUnion) =
     try {
         const userDoc = `users/${Application.getAndroidId()}`;
         const schedule = convertTimeToCronSchedule(time);
-        const stopCode = stopToCodeMap(stop);
+        const stopCode = stopToCodeMap.get(stop);
 
         const notificationBody = {
             givenUserDoc: userDoc,
@@ -104,8 +109,11 @@ export const storeNotificationInCloud = async (line, stop, time, towardsUnion) =
             body: JSON.stringify(notificationBody)
         });
 
-        const { createdJob, notificationId } = await response.json();
+        const apiResponse = await response.json();
         console.log("notification stored in firebase successfully");
+
+        const createdJob = apiResponse.createdJob;
+        const notificationId = apiResponse.notificationId;
 
         return { createdJob, notificationId };
     } catch (error) {
@@ -117,7 +125,8 @@ export const storeNotificationInCloud = async (line, stop, time, towardsUnion) =
 export const convertTimeToCronSchedule = (time) => {
     const [hour, minute] = time.split(":");
     const cronString = `${minute} ${hour} * * *`;
-    ToastAndroid.show(cronString, ToastAndroid.SHORT);
+    
+    return cronString;
 }
 
 export const fetchNotifications = async () => {
@@ -166,42 +175,30 @@ export const deleteNotification = async (id) => {
         const db = await getDB();
         const notificationToDelete = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
         await db.runAsync('DELETE FROM notifications WHERE id = ?', id);
-        // await deleteNotificationInFirebase(notificationToDelete.line, notificationToDelete.stop, notificationToDelete.time);
+        console.log(notificationToDelete.cloudSchedulerName, notificationToDelete.firebaseId);
+        await deleteNotificationInCloud(notificationToDelete.cloudSchedulerName, notificationToDelete.firebaseId);
     } catch (error) {
         console.log(error);
     }
 }
 
 // again not needed
-// export const deleteNotificationInFirebase = async (line, stop, time) => {
-//     try {
-//         const db = getFirestore();
-//         const userDocRef = doc(db, "users", Application.getAndroidId());
-//         const stopCode = stopToCodeMap.get(stop);
-//         const q = query(
-//             collection(db, "notifications"),
-//             where('docRef', '==', userDocRef),
-//             where('station', '==', stopCode),
-//             where('line', '==', line),
-//             where('time', '==', time)
-//         );
+export const deleteNotificationInCloud = async (cloudSchedulerName, firebaseId) => {
+    const response = await fetch(DELETE_NOTIFICATION, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': FUNCTION_KEY
+        },
+        body: JSON.stringify({ cloudJobPath: cloudSchedulerName, firebaseDocumentId: firebaseId })
+    });
 
-//         const querySnapshot = await getDocs(q);
-
-//         querySnapshot.forEach(notification => {
-//             // old namespace approach (doing the doc function is redundant)
-//             // deleteDoc(doc(db, "notifications", notification.id));
-//             deleteDoc(notification.ref);
-//             console.log("successfully deleted notif", notification.id);
-//         });
-
-//         if (querySnapshot.empty) {
-//             console.log("no notifications found to delete");
-//         }
-//     } catch (error) {
-//         console.log("error deleting notification in firebase", error);
-//     }
-// }
+    if (response.ok) {
+        console.log("successfully deleted notification in cloud.");
+    } else {
+        throw new Error(response.status);
+    }
+}
 
 const dropTable = async () => {
     try {
