@@ -284,7 +284,16 @@ exports.deleteNotification = onRequest(
   }
 });
 
-exports.toggleNotification = onRequest(async (req, res) => {
+exports.toggleNotification = onRequest(
+  {secrets: ["FUNCTION_KEY"]},
+  async (req, res) => {
+  
+  const authKey = req.headers['x-api-key'];
+
+  if (authKey !== process.env.FUNCTION_KEY) {
+    return res.status(403).send("Forbidden");
+  }
+  
   const {cloudJobPath, firebaseDocumentId} = req.body;
 
   const request = {
@@ -322,13 +331,22 @@ exports.toggleNotification = onRequest(async (req, res) => {
       }
     );
 
-    res.status(200).send("Successfully toggled notification to status: " + !currentStatus);
+    res.status(200).send({currentStatus: !currentStatus});
   } catch (error) {
     res.status(500).send("Error occurred toggling notification: " + error);
   }
 });
 
-exports.editNotification = onRequest(async (req, res) => {
+exports.editNotification = onRequest(
+  {secrets: ["FUNCTION_KEY"]},
+  async (req, res) => {
+  
+  const authKey = req.headers['x-api-key'];
+
+  if (authKey !== process.env.FUNCTION_KEY) {
+    return res.status(403).send("Forbidden");
+  }
+
   const {
     cloudJobPath, 
     firebaseDocumentId, 

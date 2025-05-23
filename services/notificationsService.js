@@ -1,6 +1,6 @@
 import { getDB } from "./database";
 import { convertStopToCode, stopToCodeMap } from '../data/dropdownOptions';
-import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc } from '@react-native-firebase/firestore'
+import { doc, getFirestore, addDoc, collection, deleteDoc, query, where, getDocs, updateDoc, firebase } from '@react-native-firebase/firestore'
 import * as Application from 'expo-application';
 import { ToastAndroid } from "react-native";
 import Constants from 'expo-constants';
@@ -13,41 +13,35 @@ const FUNCTION_KEY = Constants.expoConfig.extra.functionKey;
 
 //#region 
 // -------- toggle notifications in Firebase and local SQLite database --------
-const toggleNotificationInFirebase = async (line, stop, time) => {
+const toggleNotificationInCloud = async (cloudJobPath, firebaseDocumentId) => {
     try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", Application.getAndroidId());
-        const stopCode = convertStopToCode(stop);
-        const q = query(
-            collection(db, "notifications"),
-            where('docRef', '==', userDocRef),
-            where('station', '==', stopCode),
-            where('line', '==', line),
-            where('time', '==', time)
-        );
+        console.log("toggling notification in cloud");
+        
+        const response = await fetch(TOGGLE_NOTIFICATION, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': FUNCTION_KEY
+            },
+            body: JSON.stringify({cloudJobPath, firebaseDocumentId})
+        });
 
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach(notification => {
-            const notificationData = notification.data();
-            updateDoc(doc(db, 'notifications', notification.id), {
-                isActive: !notificationData.isActive
-            });
-            console.log("successfully toggled notification to ", !notificationData.isActive);
-        })
-
-        if (querySnapshot.empty) {
-            console.log("No notifications found to toggle");
+        if (response.ok) {
+            const result = await response.json();
+            return result.currentStatus;
+        } else {
+            const errMsg = await response.text();
+            throw new Error(errMsg);
         }
     } catch (error) {
-        console.log("error occurred saving notification", error);
+        console.log("error occurred toggling notification", error);
     }
 }
 
-const toggleNotificationActiveLocal = async (id) => {
+const toggleNotificationActiveLocal = async (id, enabledStatus) => {
     try {
         const db = await getDB();
-        const result = await db.runAsync(`UPDATE notifications SET isActive = CASE WHEN isActive = 1 THEN 0 ELSE 1 END WHERE id = ?`, [id]);
+        await db.runAsync(`UPDATE notifications SET isActive = ? WHERE id = ?`, [enabledStatus, id]);
         console.log("Notification toggled");
         const allRows = await db.getAllAsync('SELECT * FROM notifications');
         console.log(allRows);
@@ -58,9 +52,16 @@ const toggleNotificationActiveLocal = async (id) => {
 
 export const toggleNotification = async (id, setNotificationActive) => {
     try {
-        // await toggleNotificationInFirebase(line, stop, time);
-        await toggleNotificationActiveLocal(id);
-        setNotificationActive(prev => !prev);
+        const db = await getDB();
+        const notificationToToggle = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
+
+        const enabledStatus = await toggleNotificationInCloud(
+            notificationToToggle.cloudSchedulerName,
+            notificationToToggle.firebaseId 
+        );
+        
+        await toggleNotificationActiveLocal(id, enabledStatus);
+        setNotificationActive(enabledStatus);
     } catch (error) {
         console.log(error);
     }
@@ -147,27 +148,63 @@ export const fetchNotifications = async () => {
 
 export const editNotification = async (id, newLine, newStop, newTime, towardUnion) => {
     try {
-        console.log("hi");
+        console.log("editing notification");
         const db = await getDB();
+
+        const stopCode = stopToCodeMap.get(newStop);
+        const schedule = convertTimeToCronSchedule(newTime);
+        const notificationToEdit = await db.getFirstAsync('SELECT * FROM notifications WHERE id = ?', id);
+        const cloudJobPath = notificationToEdit.cloudSchedulerName;
+        const firebaseDocumentId = notificationToEdit.firebaseId;
+        const givenUserDoc = `users/${Application.getAndroidId()}`;
+        const enabled = notificationToEdit.isActive == 1;
+
+        const notification = {
+            stopCode,
+            schedule,
+            line: newLine,
+            towardsUnion: towardUnion,
+            enabled
+        }
+        
+        await editNotificationInCloud(cloudJobPath, firebaseDocumentId, givenUserDoc, notification);
         await db.runAsync('UPDATE notifications SET line = ?, stop = ?, time = ?, towardsUnion = ? WHERE id = ?', newLine, newStop, newTime, towardUnion == 1 ? true : false, id);
-        // await editNotificationInFirebase(
-        //     { line: notificationToEdit.line, stop: notificationToEdit.stop, time: notificationToEdit.time }, // old data
-        //     { line: newLine, stop: newStop, time: newTime } // new data
-        // )
+
     } catch (error) {
         console.log("there was an error editing the notification: ", error);
     }
 }
 
 // TODO: again, delete when completely removed
-export const editNotificationInCloud = async () => {
-    try {
-        console.log("editing notification in firebase");
+export const editNotificationInCloud = async (cloudJobPath, firebaseDocumentId, givenUserDoc, notification) => {
+    console.log("editing notification in cloud");
 
-        
-    } catch (error) {
-        console.log("error editing notification in firebase", error);
+    const body = {
+        cloudJobPath,
+        firebaseDocumentId,
+        givenUserDoc,
+        notification
+    };
+
+    console.log(body);
+    console.log(notification);
+
+    const response = await fetch(EDIT_NOTIFICATION, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': FUNCTION_KEY
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (response.ok) {
+        console.log("successfully edited notification in cloud.");
+    } else {
+        const errMsg = await response.text();
+        throw new Error(errMsg);
     }
+    
 }
 
 export const deleteNotification = async (id) => {
