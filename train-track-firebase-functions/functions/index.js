@@ -207,12 +207,17 @@ exports.scheduleNotification = onRequest(
 
   const {givenUserDoc, stopCode, schedule, line, towardsUnion} = req.body;
 
-  try {
+  let createdJob;
+  let storedNotificationId;
+  let newNotificationDocRef;
+  let fcmToken;
+
+  const storeIntoFirebase = async () => {
     // grab fcmToken from firebase using provided userDoc
     const db = getFirestore();
     const docRef = db.doc(givenUserDoc);
     const userDoc = await docRef.get();
-    const fcmToken = userDoc.data().fcmToken;
+    fcmToken = userDoc.data().fcmToken;
 
     // store notification into firebase
     const notificationCollectionRef = await db.collection("notifications");
@@ -225,23 +230,34 @@ exports.scheduleNotification = onRequest(
       towardsUnion: towardsUnion,
     };
 
-    let createdJob;
-    let storedNotificationId;
+    newNotificationDocRef = await notificationCollectionRef.add(newNotif);
+    console.log("Notification written with id: " + newNotificationDocRef.id);
+    storedNotificationId = newNotificationDocRef.id;
 
-    try {
-      const newNotificationDocRef = await notificationCollectionRef.add(newNotif);
-      console.log("Notification written with id: " + newNotificationDocRef.id);
-      storedNotificationId = newNotificationDocRef.id;
-      
-      // schedule cloud job
-      createdJob = await createSchedulerJob(fcmToken, stopCode, schedule, line, towardsUnion);
+    return newNotificationDocRef;
+  }
 
-      // add cloud job name to firestore
-      newNotificationDocRef.update({ schedulerName: createdJob });
-    } catch (error) {
-      throw new Error("Error adding notification to firestore: " + error);
+  const scheduleCloudJob = async () => {
+    // schedule cloud job
+    createdJob = await createSchedulerJob(fcmToken, stopCode, schedule, line, towardsUnion);
+
+    // add cloud job name to firestore
+    newNotificationDocRef.update({ schedulerName: createdJob });
+    console.log("Cloud job scheduled: " + createdJob);
+  }
+
+  const [firebaseResult, cloudJobResult] = await Promise.allSettled([storeIntoFirebase(), scheduleCloudJob()]);
+
+  // cleanup if failed, otherwise report success
+  if (firebaseResult.status === "rejected" || cloudJobResult.status === "rejected") {
+    if (cloudJobResult.status !== "rejected") {
+      await schedulerClient.deleteJob({name: createdJob});
     }
 
+    if (firebaseResult.status !== "rejected") {
+      firebaseResult.value.delete();
+    }
+  } else {
     // return status 200
     res.status(200).json(
       { 
@@ -249,9 +265,10 @@ exports.scheduleNotification = onRequest(
         notificationId: storedNotificationId,
       }
     );
-  } catch (error) {
-    res.status(500).send("Scheduling notification failed: " + error);
   }
+  console.log(`Scheduling notification failed. firebase error: ${firebaseResult.reason},\n cloud scheduler error: ${cloudJobResult.reason}`);
+  res.status(500).send(`Scheduling notification failed. firebase error: ${firebaseResult.reason},\n cloud scheduler error: ${cloudJobResult.reason}`);
+
 });
 
 exports.deleteNotification = onRequest(
@@ -264,24 +281,39 @@ exports.deleteNotification = onRequest(
     return res.status(403).send("Forbidden");
   }
 
-  try {
+  const deleteCloudJob = async () => {
     const request = {
       name: cloudJobPath,
     };
 
-    // delete the scheduled job
-    const response = await schedulerClient.deleteJob(request);
+    await schedulerClient.deleteJob(request);
+  }
 
-    // delete record from firebase
+  const deleteInFirestore = async () => {
     const db = getFirestore();
     const notificationCollectionRef = db.collection("notifications");
 
     await notificationCollectionRef.doc(firebaseDocumentId).delete();
-
-    res.status(200).send("successfully deleted notification");
-  } catch (error) {
-    res.status(500).send("deleting notification failed: " + error);
   }
+
+  const [cloudJobResult, firebaseResult] = await Promise.allSettled([deleteCloudJob(), deleteInFirestore()]);
+
+  // if only partially succeeded, try one more time as fallback before sending results.
+  if (cloudJobResult.status === "rejected" || firebaseResult.status === "rejected") {
+    try {
+      if (cloudJobResult.status === "rejected") {
+        await deleteCloudJob();
+      }
+
+      if (firebaseResult.status === "rejected") {
+        await deleteInFirestore();
+      }
+    } catch (error) {
+      res.status(500).send("deleting notification failed: " + error);
+    }
+  }
+
+  res.status(200).send("successfully deleted notification");
 });
 
 exports.toggleNotification = onRequest(
@@ -325,7 +357,7 @@ exports.toggleNotification = onRequest(
     }
 
     // change status in firebase
-    notificationDocRef.update(
+    await notificationDocRef.update(
       {
         enabled: !currentStatus,
       }
